@@ -50,9 +50,6 @@ if (!defined('WHMCS_PI_FILE')) {
  */
 require_once plugin_dir_path(__FILE__) . 'lib/main.class.php';
 
-// Load the shortcode handling
-require_once plugin_dir_path(__FILE__) . 'lib/products_shortcode.php';
-
 // Load the WHMCS API Class
 require_once plugin_dir_path(__FILE__) . 'lib/whmcsAPI_call.class.php';
 
@@ -61,6 +58,10 @@ require_once plugin_dir_path(__FILE__) . 'lib/whmcs-domains.class.php';
 
 // Load the WHMCS Domain Class
 require_once plugin_dir_path(__FILE__) . 'lib/whmcs-products.class.php';
+
+// Load the shortcode handling
+require_once plugin_dir_path(__FILE__) . 'lib/products_shortcode.php';
+require_once plugin_dir_path(__FILE__) . 'lib/domains_shortcode.php';
 
 // Set module local setting
 WHMCS_PI_Main::set_locale();

@@ -188,33 +188,3 @@ function whmcs_domainspromo_func($p_atts)
  * Register the WHMCS Shortcode function
  */
 add_shortcode('whmcs_domainspromo', 'whmcs_domainspromo_func');
-
-/**
- * Format the response sent back for the shotcode.
- * 
- * @since 1.0.0
- * @param string Message to be return
- * @param string CSS Class to be added to the mesage
- * @param string Prefix string
- * @param string Suffix string
- * @param bool Whether the response is an error or not
- * @return string
- */
-function whmcs_products_func_prepareOutput($p_msg, $p_class, $p_prefix = '', $p_suffix = '', $p_isError = false)
-{
-
-    // Prepare the class the be added to the return object
-    $class = 'class="whmcs_products ' . $p_class . '"';
-
-    // If there is an error, prepare extra styling
-    $style = "";
-    if ($p_isError) {
-        $style = 'style="color:#721c24;background-color: #f8d7da;border: 1px solid #f5c6cb;padding:2px;position:relative;border-radius: .25rem;"';
-    }
-
-    // Prepare the response string
-    $response = "<span $class $style>$p_prefix$p_msg$p_suffix</span>";
-
-    // Return the response
-    return $response;
-}
