@@ -40,6 +40,12 @@ Shortcode attribute :
 - **customprefix(default empty):**  Display a custom prefix (will overide WHMCS prefix)
 - **customsuffix(default empty):**  Display a custom suffix (will overide WHMCS suffix)
 
+Exemple : 
+
+- [whmcs_products pid="11" promoprice="true"] => _45%_
+- [whmcs_products pid="11" whmcsprefix="true" whmcssuffix="true"] => _$11.99 US_
+- [whmcs_products pid="11" description="true"] => _Hosting Power Plan_
+
 
 ## Installation
 
