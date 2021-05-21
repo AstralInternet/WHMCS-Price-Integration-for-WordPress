@@ -1,4 +1,3 @@
-
 <?php
 
 /**
@@ -51,65 +50,144 @@ class Domains extends whmcsAPI{
         $this->_apiKey = $p_apiKey;
     }
 
+	/**
+	 * function to return TLD detailled information
+	 * 
+	 * @param string the TLD to retreive the info
+	 * @param boolean Force a new API query
+	 * @return array the TLD information
+	 */
+	public function Get_TLD_Categories($p_forceNew = false) {
+
+		// Start by pulling the TLD information
+		$tldsInfo = $this->Get_Whmcs_TLD_List($p_forceNew);
+
+		// Return the TLD information detail
+		return $tldsInfo['categories'];
+	}
+
+	/**
+	 * function to return TLD detailled information
+	 * 
+	 * @param string the TLD to retreive the info
+	 * @param boolean Force a new API query
+	 * @return array the TLD information
+	 */
+	public function Get_TLD_Detail($p_tld, $p_forceNew = false) {
+
+		// Start by pulling the TLD information
+		$tldsInfo = $this->Get_Whmcs_TLD_List($p_forceNew);
+
+		// Check if the current TLD exist
+		if (array_key_exists($p_tld, $tldsInfo['tlddetail'])) {
+
+			// Return the TLD information detail
+			return $tldsInfo['tlddetail'][$p_tld];
+
+		} else {
+
+			// Return error message
+			return 'TLD not found';
+		}
+	}
+
     /**
 	 * Function that will call the WHMCS API and return the complete list of TLD in the system
 	 * It will also update the WordPress Database
 	 * @param array whmcs api name, key and url
 	 * @return array Array containing all the information about all the tlds
 	 */
-	public static function Update_Whmcs_TLD_List($p_whmcsApiConfig)
+	public function Get_Whmcs_TLD_List($p_forceNew = false)
 	{
-		// Fetch WHMCS domain list and prices
-		$apiValues['action'] = 'GetTLDPricing';
-		$whmcsApiTld = Whmcs_API_Call($p_whmcsApiConfig, $apiValues);
+		
+        // Define a variable to trigger if can bypass the API CAll
+        $passDBCheck = $p_forceNew;
 
-		// Build a usable array for the display
-		foreach ($whmcsApiTld->pricing as $tld => $details) {
+        // Pull out the information from the DB if it is present
+        if (!$passDBCheck) {
 
-			// Proceed only if we got a TLD with a price
-			if ($details->register->{'1'} > 0) {
+            $domainsDBInfo = get_option('whmcs-domainsTLD');
 
-				// Get the detail per TLD
-				$whmcsTLD['tlddetail'][$tld]['reg_price'] = $details->register->{'1'};
-				$whmcsTLD['tlddetail'][$tld]['categories'] = $details->categories;
-				$whmcsTLD['tlddetail'][$tld]['flag'] = $details->group;
-				$whmcsTLD['tlddetail'][$tld]['renew'] = $details->renew->{'1'};
+            // If the db was non existant, we need to proceed to the API call
+            if (!$domainsDBInfo ) {
+                $passDBCheck = true;
 
-				// Set promotion variable in the array
-				if ($whmcsTLD['tlddetail'][$tld]['reg_price'] < $whmcsTLD['tlddetail'][$tld]['renew'] ) {
+            } else {
 
-					// Get discount amount 
-					$whmcsTLD['tlddetail'][$tld]['discount_amount'] = $whmcsTLD['tlddetail'][$tld]['renew']  - $whmcsTLD['tlddetail'][$tld]['reg_price'];
+                // Check the timestamp of the product
+                $currentTime = microtime(true);
 
-					// div / 0 protection
-					if ($whmcsTLD['tlddetail'][$tld]['renew'] > 0 ) {
+                // If the time diference between the last save is longer then 1 hours, force a refresh
+                if (($currentTime - $domainsDBInfo['timestamp']) > 3600) {
+                    $passDBCheck = true;
+                }
+            }
+        }
 
-						// Get discount pourcentage
-						$whmcsTLD['tlddetail'][$tld]['discount_pourc'] =  round((1 - ($whmcsTLD['tlddetail'][$tld]['reg_price']/$whmcsTLD['tlddetail'][$tld]['renew'])) * 100, 0);
+		/**
+		 * Make the API call the WHMCS
+		 */
+		if ($passDBCheck) {
+
+			// Fetch WHMCS domain list and prices
+			$apiValues['action'] = 'GetTLDPricing';
+			$whmcsApiTld = $this->Whmcs_API_Call('GetTLDPricing');
+
+			// Build a usable array for the display
+			foreach ($whmcsApiTld->pricing as $tld => $details) {
+
+				// Proceed only if we got a TLD with a price
+				if ($details->register->{'1'} > 0) {
+
+					// Get the detail per TLD
+					$whmcsTLD['tlddetail'][$tld]['reg_price'] = $details->register->{'1'};
+					$whmcsTLD['tlddetail'][$tld]['categories'] = $details->categories;
+					$whmcsTLD['tlddetail'][$tld]['flag'] = $details->group;
+					$whmcsTLD['tlddetail'][$tld]['renew'] = $details->renew->{'1'};
+
+					// Set promotion variable in the array
+					if ($whmcsTLD['tlddetail'][$tld]['reg_price'] < $whmcsTLD['tlddetail'][$tld]['renew'] ) {
+
+						// Get discount amount 
+						$whmcsTLD['tlddetail'][$tld]['discount_amount'] = $whmcsTLD['tlddetail'][$tld]['renew']  - $whmcsTLD['tlddetail'][$tld]['reg_price'];
+
+						// div / 0 protection
+						if ($whmcsTLD['tlddetail'][$tld]['renew'] > 0 ) {
+
+							// Get discount pourcentage
+							$whmcsTLD['tlddetail'][$tld]['discount_pourc'] =  round((1 - ($whmcsTLD['tlddetail'][$tld]['reg_price']/$whmcsTLD['tlddetail'][$tld]['renew'])) * 100, 0);
+						}
+
+						// set promo trigger
+						$whmcsTLD['tlddetail'][$tld]['promo'] = 1;
+					} else {
+						// set promo trigger
+						$whmcsTLD['tlddetail'][$tld]['promo'] = 0;
 					}
 
-					// set promo trigger
-					$whmcsTLD['tlddetail'][$tld]['promo'] = 1;
-				} else {
-					// set promo trigger
-					$whmcsTLD['tlddetail'][$tld]['promo'] = 0;
-				}
-
-				// Add all tld in the "All" category
-				$whmcsTLD['categories']['all'][] = $tld;
-				// Create categories for each TLD
-				foreach ($details->categories as $category) {
-					$whmcsTLD['categories'][$category][] = $tld;
-				}
-				// Create categorie by flag if available
-				if ($details->group != '') {
-					$whmcsTLD['categories'][$details->group][] = $tld;
+					// Add all tld in the "All" category
+					$whmcsTLD['categories']['all'][] = $tld;
+					// Create categories for each TLD
+					foreach ($details->categories as $category) {
+						$whmcsTLD['categories'][$category][] = $tld;
+					}
+					// Create categorie by flag if available
+					if ($details->group != '') {
+						$whmcsTLD['categories'][$details->group][] = $tld;
+					}
 				}
 			}
-		}
 
-		// Save the output into a file
-		file_put_contents(DOMAINS_DATAFILES, serialize($whmcsTLD));
+            // Save the content with timestamp to speedup site load time
+            $domainsDBInfo['timestamp'] = microtime(true);
+            $domainsDBInfo['data'] = $whmcsTLD;
+            update_option('whmcs-domainsTLD', $domainsDBInfo);
+
+		} else {
+
+			// Return the information from the DB
+			$whmcsTLD = $domainsDBInfo['data'];
+		}
 
 		// Return the list of domain in a usable format
 		return $whmcsTLD;

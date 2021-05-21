@@ -154,6 +154,29 @@ class WHMCS_PI_Main
 	}
 
 	/**
+	 * Return a domain class object
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @return object encrypted string
+	 */
+	public static function load_domain_class() {
+
+		// Pull the credential from the database
+		$whmcsApiId = self::field_decrypt(get_option('whmcs-pi_api_id'));
+		$whmcsApiSecret = self::field_decrypt(get_option('whmcs-pi_api_secret'));
+		$whmcsAccessKey = self::field_decrypt(get_option('whmcs-pi_api_accesskey'));
+		$WhmcsApiUrl = get_option('whmcs-pi_api_url');
+
+		// Initiate the product class
+		$domainObj = new Domains($whmcsApiId , $whmcsApiSecret, $WhmcsApiUrl, $whmcsAccessKey);
+
+		// Return the decrypted value
+		return $domainObj;
+	}
+
+
+	/**
 	 * Return a product class object
 	 * 
 	 * @since 1.0.0

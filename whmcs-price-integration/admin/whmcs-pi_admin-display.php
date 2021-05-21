@@ -59,14 +59,14 @@ if ( isset($_REQUEST['testconnection']) && isset($_REQUEST['nonce']) && wp_verif
     require_once dirname( WHMCS_PI_FILE ) . '/lib/whmcsAPI_call.class.php';
     require_once dirname( WHMCS_PI_FILE ) . '/lib/whmcs-products.class.php';
 
-    $product = new Products(WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_id')), WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_secret')), get_option('whmcs-pi_api_url'), WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_accesskey')));
+    $domains = new Domains(WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_id')), WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_secret')), get_option('whmcs-pi_api_url'), WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_accesskey')));
+
 
     // Get Antispam info
-    $anti_spam_pid = "298";
-    $pidDetail = $product->GetProducts($anti_spam_pid, null); 
+    $domainsTLD = $domains->Get_TLD_Detail('com'); 
 
     // Dump the text value
-    $msg['txt'] = '<pre>'.print_r($pidDetail, true).'</pre>';
+    $msg['txt'] = '<pre>'.print_r($domainsTLD, true).'</pre>';
     $msg['type'] = 'success';
 } 
 

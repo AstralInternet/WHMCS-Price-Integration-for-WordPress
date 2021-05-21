@@ -57,6 +57,9 @@ require_once plugin_dir_path(__FILE__) . 'lib/products_shortcode.php';
 require_once plugin_dir_path(__FILE__) . 'lib/whmcsAPI_call.class.php';
 
 // Load the WHMCS Product Class
+require_once plugin_dir_path(__FILE__) . 'lib/whmcs-domains.class.php';
+
+// Load the WHMCS Domain Class
 require_once plugin_dir_path(__FILE__) . 'lib/whmcs-products.class.php';
 
 // Set module local setting
