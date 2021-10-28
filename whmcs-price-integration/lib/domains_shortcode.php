@@ -141,7 +141,7 @@ function whmcs_domainsprice_func($p_atts)
     $tldDetail = $domainObj->Get_TLD_Detail($attribute['tld']);
 
     // return the TLD price
-    return $tldDetail['reg_price'];
+    return WHMCS_PI_Main::format_currency($tldDetail['reg_price']);
 }
 
 /**
@@ -181,7 +181,7 @@ function whmcs_domainspromo_func($p_atts)
     $tldDetail = $domainObj->Get_TLD_Detail($attribute['tld']);
 
     // return the TLD promo price
-    return $tldDetail['promo'];
+    return WHMCS_PI_Main::format_currency($tldDetail['promo']);
 }
 
 /**
@@ -378,7 +378,7 @@ function whmcs_TLD_Category_To_HTML_Ul($p_allTldDetail)
  */
 function whmcs_TLD_To_HTML_Table($p_allTldDetail, $p_buttonClass = '')
 {
-
+   
     // Build a table
     $htmlTable = '<table id="tldgroup"><tbody>';
 
@@ -396,7 +396,7 @@ function whmcs_TLD_To_HTML_Table($p_allTldDetail, $p_buttonClass = '')
         $htmlTR = '<tr data-tldname="' . $tldName . '" class="'.$trClass.'">';
 
         // Add the TLD column
-        $htmlTR .= '<td class="table_tld">'.$tldName.'</td>';
+        $htmlTR .= '<td class="table_tld">.'.$tldName.'</td>';
 
         // Add the price and buy column
         $htmlTR .= '<td class="table_tld_cart">';
@@ -404,13 +404,13 @@ function whmcs_TLD_To_HTML_Table($p_allTldDetail, $p_buttonClass = '')
         // Add the promo price
         if ($tldDetail['promo'] == 1) {
             $htmlTR .= '<span class="prev_price">'.__('Was', "whmcs-pi");
-            $htmlTR .= '<span style="text-decoration: line-through;">'.$tldDetail['renew'];
+            $htmlTR .= '<span style="text-decoration: line-through;">'.WHMCS_PI_Main::format_currency($tldDetail['renew']);
             $htmlTR .= '</span>';
             $htmlTR .= '</span>';
         }
-
+        
         // Add Current price
-        $htmlTR .= '<span class="actual_price">'.$tldDetail['reg_price'].'</span>';
+        $htmlTR .= '<span class="actual_price">'.WHMCS_PI_Main::format_currency($tldDetail['reg_price']).'</span>';
 
         // Close the cart column
         $htmlTR .= '</td>';

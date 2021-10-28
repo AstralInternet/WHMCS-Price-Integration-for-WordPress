@@ -162,6 +162,28 @@ class WHMCS_PI_Main
 		return $decrypted;
 	}
 
+
+	/**
+	 * Return the currency formated
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param float number to format
+	 * @return string formated currency
+	 */
+	public static function format_currency($p_currency)
+	{
+		// Get the currency local value
+		$currencyLocale = __('en-CA', "whmcs-pi");
+
+		// Open a new number object
+		$fmt = new NumberFormatter( $currencyLocale, NumberFormatter::CURRENCY );
+
+		// Return the decrypted value
+		return  $fmt->format($p_currency);
+	}
+
+
 	/**
 	 * Return a domain class object
 	 * 
