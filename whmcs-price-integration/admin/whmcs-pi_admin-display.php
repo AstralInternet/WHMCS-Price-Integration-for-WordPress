@@ -47,7 +47,9 @@ if ( isset($_REQUEST['updateconf']) && isset($_REQUEST['nonce']) && wp_verify_no
 } 
 
 /**
- * Test the API connection
+ * Test if we can access the WHMCS API with the provided credential
+ * 
+ * @since 1.0.0
  */
 if ( isset($_REQUEST['testconnection']) && isset($_REQUEST['nonce']) && wp_verify_nonce($_REQUEST['nonce'], 'whmcs-pi_testconnection') ) {
 
@@ -59,17 +61,45 @@ if ( isset($_REQUEST['testconnection']) && isset($_REQUEST['nonce']) && wp_verif
     require_once dirname( WHMCS_PI_FILE ) . '/lib/whmcsAPI_call.class.php';
     require_once dirname( WHMCS_PI_FILE ) . '/lib/whmcs-products.class.php';
 
-    $domains = new Domains(WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_id')), WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_secret')), get_option('whmcs-pi_api_url'), WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_accesskey')));
 
+    // Create a new WHMCS API object to test the connection 
+    $whmcsAPI = new whmcsAPI(WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_id')), WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_secret')), get_option('whmcs-pi_api_url'), WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_accesskey')));
 
-    // Get Antispam info
-    $domainsTLD = $domains->Get_TLD_Detail('com'); 
+    // Create a WHMCS API call to fetch all the domain informatin
+    $whmcsTldTestCall = $whmcsAPI->Whmcs_API_Call('GetTLDPricing');
 
-    // Dump the text value
-    $msg['txt'] = '<pre>'.print_r($domainsTLD, true).'</pre>';
-    $msg['type'] = 'success';
+    // Check if the return result is a WHMCS format
+    if (property_exists($whmcsTldTestCall, 'result')) {
+
+        // REturn positive message once connection is confirmed
+        if ($whmcsTldTestCall->result == 'success') {
+            $msg['txt'] = 'WHMCS API is properly configured';
+            $msg['type'] = 'success';  
+        } else {
+
+            // Different error message if the error is caused for having the wrong credential or
+            // having invalid API permission
+            if (strpos($whmcsTldTestCall->message, 'Invalid IP') === false) {
+                // Return error, invalid credential 
+                $msg['txt'] = "Invalid WHMCS API credential";
+                $msg['txt'] .= '<pre>'.print_r($whmcsTldTestCall, true).'</pre>';
+                $msg['type'] = 'error';
+            } else {
+                // Return error, invalid access
+                // TODO : transfer validation out of this file and check each require permission.
+                $msg['txt'] = "Invalid WHMCS API permission";
+                $msg['txt'] .= '<pre>'.print_r($whmcsTldTestCall, true).'</pre>';
+                $msg['type'] = 'error';
+            }
+        }
+    } else {
+
+        // Return error, wrong WHMCS json format
+        $msg['txt'] = "Invalid WHMCS API answerConfiguration";
+        $msg['txt'] .= '<pre>Check API URL</pre>';
+        $msg['type'] = 'error';
+    }
 } 
-
 
 ?>
 
