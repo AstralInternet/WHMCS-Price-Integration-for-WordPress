@@ -138,45 +138,50 @@ class Domains extends whmcsAPI
 			// Build a usable array for the display
 			foreach ($whmcsApiTld->pricing as $tld => $details) {
 
+
 				// Proceed only if we got a TLD with a price
-				if ($details->register->{'1'} > 0) {
-
-					// Get the detail per TLD
-					$whmcsTLD['tlddetail'][$tld]['reg_price'] = $details->register->{'1'};
-					$whmcsTLD['tlddetail'][$tld]['categories'] = $details->categories;
-					$whmcsTLD['tlddetail'][$tld]['flag'] = $details->group;
-					$whmcsTLD['tlddetail'][$tld]['renew'] = $details->renew->{'1'};
-
-					// Set promotion variable in the array
-					if ($whmcsTLD['tlddetail'][$tld]['reg_price'] < $whmcsTLD['tlddetail'][$tld]['renew']) {
-
-						// Get discount amount 
-						$whmcsTLD['tlddetail'][$tld]['discount_amount'] = $whmcsTLD['tlddetail'][$tld]['renew']  - $whmcsTLD['tlddetail'][$tld]['reg_price'];
-
-						// div / 0 protection
-						if ($whmcsTLD['tlddetail'][$tld]['renew'] > 0) {
-
-							// Get discount pourcentage
-							$whmcsTLD['tlddetail'][$tld]['discount_pourc'] =  round((1 - ($whmcsTLD['tlddetail'][$tld]['reg_price'] / $whmcsTLD['tlddetail'][$tld]['renew'])) * 100, 0);
-						}
-
-						// set promo trigger
-						$whmcsTLD['tlddetail'][$tld]['promo'] = 1;
-					} else {
-						// set promo trigger
-						$whmcsTLD['tlddetail'][$tld]['promo'] = 0;
-					}
-
-					// Add all tld in the "All" category
-					$whmcsTLD['categories']['all'][] = $tld;
-					// Create categories for each TLD
-					foreach ($details->categories as $category) {
-						$whmcsTLD['categories'][$category][] = $tld;
-					}
-					// Create categorie by flag if available
-					if ($details->group != '') {
-						$whmcsTLD['categories'][$details->group][] = $tld;
-					}
+				if (property_exists($details, 'register')) {
+    				if (property_exists($details->register, '1')) {
+        				if ($details->register->{'1'} > 0) {
+        
+        					// Get the detail per TLD
+        					$whmcsTLD['tlddetail'][$tld]['reg_price'] = $details->register->{'1'};
+        					$whmcsTLD['tlddetail'][$tld]['categories'] = $details->categories;
+        					$whmcsTLD['tlddetail'][$tld]['flag'] = $details->group;
+        					$whmcsTLD['tlddetail'][$tld]['renew'] = $details->renew->{'1'};
+        
+        					// Set promotion variable in the array
+        					if ($whmcsTLD['tlddetail'][$tld]['reg_price'] < $whmcsTLD['tlddetail'][$tld]['renew']) {
+        
+        						// Get discount amount 
+        						$whmcsTLD['tlddetail'][$tld]['discount_amount'] = $whmcsTLD['tlddetail'][$tld]['renew']  - $whmcsTLD['tlddetail'][$tld]['reg_price'];
+        
+        						// div / 0 protection
+        						if ($whmcsTLD['tlddetail'][$tld]['renew'] > 0) {
+        
+        							// Get discount pourcentage
+        							$whmcsTLD['tlddetail'][$tld]['discount_pourc'] =  round((1 - ($whmcsTLD['tlddetail'][$tld]['reg_price'] / $whmcsTLD['tlddetail'][$tld]['renew'])) * 100, 0);
+        						}
+        
+        						// set promo trigger
+        						$whmcsTLD['tlddetail'][$tld]['promo'] = 1;
+        					} else {
+        						// set promo trigger
+        						$whmcsTLD['tlddetail'][$tld]['promo'] = 0;
+        					}
+        
+        					// Add all tld in the "All" category
+        					$whmcsTLD['categories']['all'][] = $tld;
+        					// Create categories for each TLD
+        					foreach ($details->categories as $category) {
+        						$whmcsTLD['categories'][$category][] = $tld;
+        					}
+        					// Create categorie by flag if available
+        					if ($details->group != '') {
+        						$whmcsTLD['categories'][$details->group][] = $tld;
+        					}
+        				}
+    				}
 				}
 			}
 
