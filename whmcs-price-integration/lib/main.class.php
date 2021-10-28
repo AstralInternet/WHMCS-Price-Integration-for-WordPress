@@ -24,14 +24,14 @@
  * 
  */
 
- // If this file is called directly, abort.
+// If this file is called directly, abort.
 defined('ABSPATH') or die('No script kiddies please!');
 
 
 
 class WHMCS_PI_Main
 {
- 
+
 	/**
 	 * Upon plugin activation, will create a new entry in the option table for
 	 * the automatic purge trigger.
@@ -44,34 +44,41 @@ class WHMCS_PI_Main
 		// Check and add if needed the WHMCS API Url option
 		if (!get_option('whmcs-pi_api_url')) {
 
-            // Add the options with the default value
+			// Add the options with the default value
 			update_option('whmcs-pi_api_url', "");
 		}
 
 		// Check and add if needed the WHMCS API ID option
 		if (!get_option('whmcs-pi_api_id')) {
 
-            // Add the options with the default value
+			// Add the options with the default value
 			update_option('whmcs-pi_api_id', "");
 		}
 
 		// Check and add if needed the WHMCS API Secret option
 		if (!get_option('whmcs-pi_api_secret')) {
 
-            // Add the options with the default value
+			// Add the options with the default value
 			update_option('whmcs-pi_api_secret', "");
 		}
 
 		// Check and add if needed the WHMCS API access key option
 		if (!get_option('whmcs-pi_api_accesskey')) {
 
-            // Add the options with the default value
+			// Add the options with the default value
 			update_option('whmcs-pi_api_accesskey', "");
+		}
+
+		// Check and add if needed the WHMCS client area URL
+		if (!get_option('whmcs-pi_clientareaurl')) {
+
+			// Add the options with the default value
+			update_option('whmcs-pi_clientareaurl', "");
 		}
 
 		// Update/create the temporary product cache array
 		update_option('whmcs-pi_productcache', "");
-		
+
 		// Update/create the temporary domain cache array
 		update_option('whmcs-pi_domaincache', "");
 	}
@@ -102,7 +109,8 @@ class WHMCS_PI_Main
 	 * @param string String to encrypt
 	 * @return string encrypted string
 	 */
-	public static function field_encrypt($p_inString) {
+	public static function field_encrypt($p_inString)
+	{
 
 		// Use Wordpress "Secure Auth Salt" for our openSSL Encryption method
 		$sSalt = SECURE_AUTH_SALT;
@@ -110,7 +118,7 @@ class WHMCS_PI_Main
 
 		// Define the encryption method to be used
 		$method = 'aes-256-cbc';
-	
+
 		// Create the Initialization Vector
 		$iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('AES-256-CBC'));
 
@@ -129,7 +137,8 @@ class WHMCS_PI_Main
 	 * @param string String to decrypt
 	 * @return string encrypted string
 	 */
-	public static function field_decrypt($p_inEncryptedString) {
+	public static function field_decrypt($p_inEncryptedString)
+	{
 
 		// Use Wordpress "Secure Auth Salt" for our openSSL Encryption method
 		$sSalt = SECURE_AUTH_SALT;
@@ -137,7 +146,7 @@ class WHMCS_PI_Main
 
 		// Define the encryption method to be used
 		$method = 'aes-256-cbc';
-	
+
 		// Decode the base64 string
 		$rawValue = base64_decode($p_inEncryptedString);
 
@@ -160,7 +169,8 @@ class WHMCS_PI_Main
 	 * 
 	 * @return object encrypted string
 	 */
-	public static function load_domain_class() {
+	public static function load_domain_class()
+	{
 
 		// Pull the credential from the database
 		$whmcsApiId = self::field_decrypt(get_option('whmcs-pi_api_id'));
@@ -169,7 +179,7 @@ class WHMCS_PI_Main
 		$WhmcsApiUrl = get_option('whmcs-pi_api_url');
 
 		// Initiate the product class
-		$domainObj = new Domains($whmcsApiId , $whmcsApiSecret, $WhmcsApiUrl, $whmcsAccessKey);
+		$domainObj = new Domains($whmcsApiId, $whmcsApiSecret, $WhmcsApiUrl, $whmcsAccessKey);
 
 		// Return the decrypted value
 		return $domainObj;
@@ -183,7 +193,8 @@ class WHMCS_PI_Main
 	 * 
 	 * @return object encrypted string
 	 */
-	public static function load_product_class() {
+	public static function load_product_class()
+	{
 
 		// Pull the credential from the database
 		$whmcsApiId = self::field_decrypt(get_option('whmcs-pi_api_id'));
@@ -192,44 +203,44 @@ class WHMCS_PI_Main
 		$WhmcsApiUrl = get_option('whmcs-pi_api_url');
 
 		// Initiate the product class
-		$productObj = new Products($whmcsApiId , $whmcsApiSecret, $WhmcsApiUrl, $whmcsAccessKey);
+		$productObj = new Products($whmcsApiId, $whmcsApiSecret, $WhmcsApiUrl, $whmcsAccessKey);
 
 		// Return the decrypted value
 		return $productObj;
 	}
 
-    /**
-     * Define the locale for this plugin for internationalization.
-     *
-     * Uses the WHMCS_PI_i18n class in order to set the domain and to register the
-     * hook with WordPress.
-     *
-     * @since    1.0.0
-     * @return void
-     */
-    public static function set_locale()
-    {
+	/**
+	 * Define the locale for this plugin for internationalization.
+	 *
+	 * Uses the WHMCS_PI_i18n class in order to set the domain and to register the
+	 * hook with WordPress.
+	 *
+	 * @since    1.0.0
+	 * @return void
+	 */
+	public static function set_locale()
+	{
 
-        /**
-         * sub-function that will load the language (i18n) file into the 
-         * wordpress admin area
-         * 
-         * @since    1.0.0
-         * @return void
-         */
-        function WHMCS_PI_load_plugin_textdomain()
-        {
-            // Define the plugin path
-            $plugin_rel_path = dirname(dirname(plugin_basename(__FILE__))) .
-                '/i18n';
+		/**
+		 * sub-function that will load the language (i18n) file into the 
+		 * wordpress admin area
+		 * 
+		 * @since    1.0.0
+		 * @return void
+		 */
+		function WHMCS_PI_load_plugin_textdomain()
+		{
+			// Define the plugin path
+			$plugin_rel_path = dirname(dirname(plugin_basename(__FILE__))) .
+				'/i18n';
 
-            // Set the language path for wordPress to find it.
-            load_plugin_textdomain('whmcs-pi', false, $plugin_rel_path);
-        }
+			// Set the language path for wordPress to find it.
+			load_plugin_textdomain('whmcs-pi', false, $plugin_rel_path);
+		}
 
-        // Add load the language files upon loading the module
-        add_action('plugins_loaded', 'WHMCS_PI_load_plugin_textdomain');
-    }  
+		// Add load the language files upon loading the module
+		add_action('plugins_loaded', 'WHMCS_PI_load_plugin_textdomain');
+	}
 
 	/**
 	 * Remove the options added by the plugin from the option table in the 
@@ -260,22 +271,27 @@ class WHMCS_PI_Main
 
 		// Remove the WHMCS API access key option
 		if (get_option('whmcs-pi_api_accesskey')) {
-            
+
 			delete_option('whmcs-pi_api_accesskey', "");
 		}
 
 		// Remove the product cache table
 		if (get_option('whmcs-pi_productcache')) {
-            
+
 			delete_option('whmcs-pi_productcache', "");
 		}
 
 		// Remove the domain cache table
 		if (get_option('whmcs-pi_domaincache')) {
-            
+
 			delete_option('whmcs-pi_domaincache', "");
 		}
 
-	}
+		// Remove WHMCS client area URL field
+		if (get_option('whmcs-pi_clientareaurl')) {
 
+			delete_option('whmcs-pi_clientareaurl', "");
+		}
+
+	}
 }

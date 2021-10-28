@@ -61,7 +61,19 @@ Shortcode attribute :
 
 - **tld:** The domain TLD
 - **bypasscache (default false):** Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
-- 
+
+### whmcs_domainsdisplayall
+
+Return a list of every available domains or a list of each category
+
+[whmcs_domainsdisplayall display="tld" bypasscache='true"]
+
+Shortcode attribute : 
+
+- **display:** (tld or category): Will either display alSl the categories or a listr of all the TLDS
+- **bypasscache (default false):** Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
+- **tldbtnclass:** : CSS class to be added to the TLD buttons
+
 ### whmcs_domainspromo
 
 Return the domain promo price 
@@ -84,7 +96,29 @@ Shortcode attribute :
 - **tld:** The domain TLD
 - **bypasscache (default false):** Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
 
+### whmcs_domainsdisplayallJS
+
+Add some JS script to hide TLD from display all TLD shortcode when clicking on some category (small pure JS solution)
+
+[whmcs_domainsdisplayallJS docready="true"]
+
+Shortcode attribute : 
+
+- **docready:** Add the equivalent of "$(document).ready(function(){" from jQuery but in a pure JS format.
+
+
 ## Installation
 
 1. Upload the plugin files to the /wp-content/plugins/ directory, or install the plugin through the WordPress plugins screen directly.
 2. Activate the plugin through the ‘Plugins’ screen in WordPress
+
+## Using a full domain listing with categories
+
+It is suggested to create a column block with two column. 
+
+Insert a short code block just before column with the following code `[whmcs_domainsdisplayallJS docReady='true']`. This will add the necessary JS to interact with the two columns.
+
+In the first column, insert shortcode like this `[whmcs_domainsdisplayall bypasscache='true']`. This will add a list of every categorie.
+In the second column, insert shortcode like this `[whmcs_domainsdisplayall display='tld' bypasscache='true']`. This will add a list of every TLDs.
+
+You will now be able to show the TLDs based on the selected category. You will need to add CSS to clean the look.

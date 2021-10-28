@@ -24,31 +24,33 @@
  * 
  */
 
- // If this file is called directly, abort.
- defined('ABSPATH') or die('No script kiddies please!');
+// If this file is called directly, abort.
+defined('ABSPATH') or die('No script kiddies please!');
 
 
 /**
  * Class that handles the products and domains from whcms
  */
-class Domains extends whmcsAPI{
+class Domains extends whmcsAPI
+{
 
 
-    /**
-     * Constructor
-     * @param string $p_apiID Id used to login to the API
-     * @param string $p_apiSecret Secret used to login to the API
-     * @param string $p_apiUrl Url to connect to the API
-     * @param string $p_apiKey Key used to connect to the API
-     */
-    public function __construct($p_apiID, $p_apiSecret, $p_apiUrl, $p_apiKey) {
-        
-        // Assign all our properties
-        $this->_apiID = $p_apiID;
-        $this->_apiSecret = $p_apiSecret;
-        $this->_apiUrl = $p_apiUrl;
-        $this->_apiKey = $p_apiKey;
-    }
+	/**
+	 * Constructor
+	 * @param string $p_apiID Id used to login to the API
+	 * @param string $p_apiSecret Secret used to login to the API
+	 * @param string $p_apiUrl Url to connect to the API
+	 * @param string $p_apiKey Key used to connect to the API
+	 */
+	public function __construct($p_apiID, $p_apiSecret, $p_apiUrl, $p_apiKey)
+	{
+
+		// Assign all our properties
+		$this->_apiID = $p_apiID;
+		$this->_apiSecret = $p_apiSecret;
+		$this->_apiUrl = $p_apiUrl;
+		$this->_apiKey = $p_apiKey;
+	}
 
 	/**
 	 * function to return TLD detailled information
@@ -57,7 +59,8 @@ class Domains extends whmcsAPI{
 	 * @param boolean Force a new API query
 	 * @return array the TLD information
 	 */
-	public function Get_TLD_Categories($p_forceNew = false) {
+	public function Get_TLD_Categories($p_forceNew = false)
+	{
 
 		// Start by pulling the TLD information
 		$tldsInfo = $this->Get_Whmcs_TLD_List($p_forceNew);
@@ -73,7 +76,8 @@ class Domains extends whmcsAPI{
 	 * @param boolean Force a new API query
 	 * @return array the TLD information
 	 */
-	public function Get_TLD_Detail($p_tld, $p_forceNew = false) {
+	public function Get_TLD_Detail($p_tld, $p_forceNew = false)
+	{
 
 		// Start by pulling the TLD information
 		$tldsInfo = $this->Get_Whmcs_TLD_List($p_forceNew);
@@ -83,7 +87,6 @@ class Domains extends whmcsAPI{
 
 			// Return the TLD information detail
 			return $tldsInfo['tlddetail'][$p_tld];
-
 		} else {
 
 			// Return error message
@@ -91,7 +94,7 @@ class Domains extends whmcsAPI{
 		}
 	}
 
-    /**
+	/**
 	 * Function that will call the WHMCS API and return the complete list of TLD in the system
 	 * It will also update the WordPress Database
 	 * @param array whmcs api name, key and url
@@ -99,30 +102,29 @@ class Domains extends whmcsAPI{
 	 */
 	public function Get_Whmcs_TLD_List($p_forceNew = false)
 	{
-		
-        // Define a variable to trigger if can bypass the API CAll
-        $passDBCheck = $p_forceNew;
 
-        // Pull out the information from the DB if it is present
-        if (!$passDBCheck) {
+		// Define a variable to trigger if can bypass the API CAll
+		$passDBCheck = $p_forceNew;
 
-            $domainsDBInfo = get_option('whmcs-domainsTLD');
+		// Pull out the information from the DB if it is present
+		if (!$passDBCheck) {
 
-            // If the db was non existant, we need to proceed to the API call
-            if (!$domainsDBInfo ) {
-                $passDBCheck = true;
+			$domainsDBInfo = get_option('whmcs-domainsTLD');
 
-            } else {
+			// If the db was non existant, we need to proceed to the API call
+			if (!$domainsDBInfo) {
+				$passDBCheck = true;
+			} else {
 
-                // Check the timestamp of the product
-                $currentTime = microtime(true);
+				// Check the timestamp of the product
+				$currentTime = microtime(true);
 
-                // If the time diference between the last save is longer then 1 hours, force a refresh
-                if (($currentTime - $domainsDBInfo['timestamp']) > 3600) {
-                    $passDBCheck = true;
-                }
-            }
-        }
+				// If the time diference between the last save is longer then 1 hours, force a refresh
+				if (($currentTime - $domainsDBInfo['timestamp']) > 3600) {
+					$passDBCheck = true;
+				}
+			}
+		}
 
 		/**
 		 * Make the API call the WHMCS
@@ -146,16 +148,16 @@ class Domains extends whmcsAPI{
 					$whmcsTLD['tlddetail'][$tld]['renew'] = $details->renew->{'1'};
 
 					// Set promotion variable in the array
-					if ($whmcsTLD['tlddetail'][$tld]['reg_price'] < $whmcsTLD['tlddetail'][$tld]['renew'] ) {
+					if ($whmcsTLD['tlddetail'][$tld]['reg_price'] < $whmcsTLD['tlddetail'][$tld]['renew']) {
 
 						// Get discount amount 
 						$whmcsTLD['tlddetail'][$tld]['discount_amount'] = $whmcsTLD['tlddetail'][$tld]['renew']  - $whmcsTLD['tlddetail'][$tld]['reg_price'];
 
 						// div / 0 protection
-						if ($whmcsTLD['tlddetail'][$tld]['renew'] > 0 ) {
+						if ($whmcsTLD['tlddetail'][$tld]['renew'] > 0) {
 
 							// Get discount pourcentage
-							$whmcsTLD['tlddetail'][$tld]['discount_pourc'] =  round((1 - ($whmcsTLD['tlddetail'][$tld]['reg_price']/$whmcsTLD['tlddetail'][$tld]['renew'])) * 100, 0);
+							$whmcsTLD['tlddetail'][$tld]['discount_pourc'] =  round((1 - ($whmcsTLD['tlddetail'][$tld]['reg_price'] / $whmcsTLD['tlddetail'][$tld]['renew'])) * 100, 0);
 						}
 
 						// set promo trigger
@@ -178,11 +180,10 @@ class Domains extends whmcsAPI{
 				}
 			}
 
-            // Save the content with timestamp to speedup site load time
-            $domainsDBInfo['timestamp'] = microtime(true);
-            $domainsDBInfo['data'] = $whmcsTLD;
-            update_option('whmcs-domainsTLD', $domainsDBInfo);
-
+			// Save the content with timestamp to speedup site load time
+			$domainsDBInfo['timestamp'] = microtime(true);
+			$domainsDBInfo['data'] = $whmcsTLD;
+			update_option('whmcs-domainsTLD', $domainsDBInfo);
 		} else {
 
 			// Return the information from the DB
@@ -192,5 +193,4 @@ class Domains extends whmcsAPI{
 		// Return the list of domain in a usable format
 		return $whmcsTLD;
 	}
-
 }
