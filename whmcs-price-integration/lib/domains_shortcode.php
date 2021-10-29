@@ -355,7 +355,7 @@ function whmcs_TLD_Category_To_HTML_Ul($p_allTldDetail)
         $htmlTldgroup = str_replace(" ", "_", $tldGroup);
 
         // Build the LI element
-        $htmlLI =  '<li ' . $class . 'data-tldgroup="' . $htmlTldgroup . '">' . __($tldGroup, "whmcs-pi-tld-group") . ' (' . count($groupTLDs) . ')</li>';
+        $htmlLI =  '<li ' . $class . 'data-tldgroup="' . $htmlTldgroup . '">' . __($tldGroup, "whmcs-pi") . ' (' . count($groupTLDs) . ')</li>';
 
         // Add HTML LI to the UL element
         $htmlList .= $htmlLI;

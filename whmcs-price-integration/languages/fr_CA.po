@@ -1,0 +1,145 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2021-10-29 10:07-0400\n"
+"PO-Revision-Date: 2021-10-29 10:15-0400\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fr_CA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.1\n"
+"X-Poedit-Basepath: ..\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Poedit-KeywordsList: __\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPath-1: lib/domains_shortcode.php\n"
+"X-Poedit-SearchPath-2: lib/main.class.php\n"
+"X-Poedit-SearchPath-3: lib/products_shortcode.php\n"
+"X-Poedit-SearchPath-4: lib/whmcsAPI_call.class.php\n"
+"X-Poedit-SearchPath-5: lib/whmcs-domains.class.php\n"
+"X-Poedit-SearchPath-6: lib/whmcs-products.class.php\n"
+"X-Poedit-SearchPath-7: admin/whmcs-pi_admin-display.php\n"
+"X-Poedit-SearchPath-8: whmcs-price-integration.php\n"
+
+#: admin/whmcs-pi_admin-display.php:47
+msgid "API Configuration updated"
+msgstr "Configuration de l'API mise à jour"
+
+#: admin/whmcs-pi_admin-display.php:211
+msgid "WHMCS Price Integration"
+msgstr "Intégration des prix WHMCS"
+
+#: admin/whmcs-pi_admin-display.php:234
+msgid "Module Configuration"
+msgstr "Configuration du module"
+
+#: admin/whmcs-pi_admin-display.php:235
+msgid "Enter your WHMCS API information below"
+msgstr "Entrez vos informations d'API WHMCS ci-dessous"
+
+#: admin/whmcs-pi_admin-display.php:273
+msgid "Test the API connection"
+msgstr "Tester la connexion API"
+
+#: lib/domains_shortcode.php:49 lib/domains_shortcode.php:89
+#: lib/domains_shortcode.php:129 lib/domains_shortcode.php:169
+msgid "TLD cannot be empty."
+msgstr "Le TLD ne peut pas être vide."
+
+#: lib/domains_shortcode.php:406
+msgid "Was"
+msgstr "Était"
+
+#: lib/domains_shortcode.php:419
+msgid "Check Availability"
+msgstr "Voir les disponibilités"
+
+#: lib/domains_shortcode.php:358
+msgid "all"
+msgstr "Tous"
+
+#: lib/domains_shortcode.php:358
+msgid "Popular"
+msgstr "Populaire"
+
+#: lib/domains_shortcode.php:358
+msgid "Geographic"
+msgstr "Géographique"
+
+#: lib/domains_shortcode.php:358
+msgid "hot"
+msgstr "Prisé"
+
+#: lib/domains_shortcode.php:358
+msgid "Other"
+msgstr "Autre"
+
+#: lib/domains_shortcode.php:358
+msgid "Education"
+msgstr "Éducation"
+
+#: lib/domains_shortcode.php:358
+msgid "Arts and Entertainment"
+msgstr "Arts and Divertissements"
+
+#: lib/domains_shortcode.php:358
+msgid "Business"
+msgstr "Entreprise"
+
+#: lib/domains_shortcode.php:358
+msgid "Food and Drink"
+msgstr "Nourriture et Boissons"
+
+#: lib/domains_shortcode.php:358
+msgid "Shopping"
+msgstr "Magasinage"
+
+#: lib/domains_shortcode.php:358
+msgid "Novelty"
+msgstr "Nouveautés"
+
+#: lib/domains_shortcode.php:358
+msgid "Services"
+msgstr "Services"
+
+#: lib/domains_shortcode.php:358
+msgid "Real Estate"
+msgstr "Immobilier"
+
+#: lib/domains_shortcode.php:358
+msgid "Leisure and Recreation"
+msgstr "Loisirs"
+
+#: lib/domains_shortcode.php:358
+msgid "Technology"
+msgstr "Technologies"
+
+#: lib/domains_shortcode.php:358
+msgid "Money and Finance"
+msgstr "Argent et Finances"
+
+#: lib/domains_shortcode.php:358
+msgid "Sports"
+msgstr "Sports"
+
+#: lib/main.class.php:96
+msgid "WHMCS Price Intergration"
+msgstr "Intégration des prix WHMCS"
+
+#: lib/main.class.php:177
+msgid "en-CA"
+msgstr "fr-CA"
+
+#: lib/products_shortcode.php:242
+msgid "Error while making the API call : "
+msgstr "Erreur lors de l'appel de l'API : "
+
+#: lib/products_shortcode.php:270
+msgid "Invalid period (<b>"
+msgstr "Période invalide (<b>"
+
+#: lib/products_shortcode.php:293
+msgid "Invalid product ID provided (<b>"
+msgstr "ID de produit fourni non valide (<b>"
