@@ -416,7 +416,7 @@ function whmcs_TLD_To_HTML_Table($p_allTldDetail, $p_buttonClass = '')
         $htmlTR .= '</td>';
 
         // Add the register button
-        $htmlTR .= '<td><div class="wp-block-button btn '.$p_buttonClass.'" id="'.$tldName.'"><a class="wp-block-button__link" href="'.get_option('whmcs-pi_clientareaurl').'cart.php?a=add&domain=register">'.__('Check Availability', "whmcs-pi").'</a></div></td>';
+        $htmlTR .= '<td><div class="wp-block-button btn '.$p_buttonClass.'" id="'.$tldName.'"><a class="wp-block-button__link" href="'.get_option('whmcs-pi_clientareaurl').'cart.php?a=add&domain=register">'.__('Search domain TLD', "whmcs-pi").'</a></div></td>';
 
         // Close the cart column
         $htmlTR .= '</td>';
