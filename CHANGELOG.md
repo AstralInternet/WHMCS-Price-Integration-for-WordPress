@@ -2,6 +2,30 @@
 
 All notable changes to WHMCS Price Integration for WordPress.
 
+## 1.2.0
+
+### The price block had semantic markup and no stylesheet
+
+The amount, the period and the renewal note ran together in a row, left aligned
+under a centred heading, with no hierarchy. The markup had carried the right
+classes since 1.0.0 — the stylesheet was simply never shipped.
+
+`assets/block.css` supplies it: large amount, period on the same baseline,
+renewal on its own line, discount in an outlined pill. All centred.
+
+The stylesheet is **deliberately colour-free**. The block may sit on a white
+page or inside a coloured call to action, so every rule inherits the surrounding
+text colour and varies only size, weight and opacity. A hard-coded colour would
+break half its placements.
+
+### The label no longer repeats the heading
+
+"A .gold domain" sitting under the heading "Register your .GOLD now" added
+nothing. A `showLabel` attribute, **off by default**, now controls it. A label
+typed by the author is always honoured.
+
+---
+
 ## 1.1.1
 
 The saving was announced as "the first year" whatever length was on display. Under a three year price that described a different offer from the one shown. The wording now follows the length: "Save 33% over 3 years".

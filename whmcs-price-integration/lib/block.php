@@ -45,8 +45,21 @@ function whmcs_pi_register_block()
         true
     );
 
+    /**
+     * Colour-free stylesheet: the block inherits the surrounding text colour,
+     * so it stays legible whether it sits on a white page or inside a coloured
+     * call to action.
+     */
+    wp_register_style(
+        'whmcs-pi-block-style',
+        plugins_url('assets/block.css', WHMCS_PI_FILE),
+        array(),
+        WHMCS_PI_VERSION
+    );
+
     register_block_type('whmcs-pi/domain-price', array(
         'api_version'     => 2,
+        'style'           => 'whmcs-pi-block-style',
         'title'           => __('WHMCS domain price', 'whmcs-pi'),
         'description'     => __('Shows the live registration and renewal price for a domain extension.', 'whmcs-pi'),
         'category'        => 'widgets',
@@ -59,6 +72,7 @@ function whmcs_pi_register_block()
             'showRenew' => array('type' => 'boolean', 'default' => true),
             'showPromo' => array('type' => 'boolean', 'default' => true),
             'label'     => array('type' => 'string', 'default' => ''),
+            'showLabel' => array('type' => 'boolean', 'default' => false),
         ),
         'render_callback' => 'whmcs_pi_render_domain_price',
     ));
@@ -129,10 +143,18 @@ function whmcs_pi_render_domain_price($p_attributes)
         /* translators: %d: number of years */
         : sprintf(__('for %d years', 'whmcs-pi'), $years);
 
-    $label = !empty($p_attributes['label'])
-        ? $p_attributes['label']
+    /**
+     * The generated label repeats whatever heading sits above the block, so it
+     * is off by default. A label typed by the author is always honoured.
+     */
+    if (!empty($p_attributes['label'])) {
+        $label = $p_attributes['label'];
+    } elseif (!empty($p_attributes['showLabel'])) {
         /* translators: %s: domain extension, e.g. .pizza */
-        : sprintf(__('A .%s domain', 'whmcs-pi'), $tld);
+        $label = sprintf(__('A .%s domain', 'whmcs-pi'), $tld);
+    } else {
+        $label = '';
+    }
 
     $lines = array();
 
@@ -194,10 +216,14 @@ function whmcs_pi_render_domain_price($p_attributes)
         ? get_block_wrapper_attributes(array('class' => 'whmcs-pi-price'))
         : 'class="whmcs-pi-price"';
 
+    $entete = $label === ''
+        ? ''
+        : sprintf('<p class="whmcs-pi-price__label">%s</p>', esc_html($label));
+
     return sprintf(
-        '<div %s><p class="whmcs-pi-price__label">%s</p><p class="whmcs-pi-price__body">%s</p></div>',
+        '<div %s>%s<p class="whmcs-pi-price__body">%s</p></div>',
         $wrapper,
-        esc_html($label),
+        $entete,
         implode(' ', $lines)
     );
 }

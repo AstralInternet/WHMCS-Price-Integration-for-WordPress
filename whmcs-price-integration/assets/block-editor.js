@@ -84,6 +84,18 @@
 					}),
 
 					el(components.ToggleControl, {
+						label: __('Show the label above the price', 'whmcs-pi'),
+						help: __(
+							'Off by default: the heading above the block usually says the same thing.',
+							'whmcs-pi'
+						),
+						checked: !!attributes.showLabel,
+						onChange: function (value) {
+							setAttributes({ showLabel: value });
+						}
+					}),
+
+					el(components.ToggleControl, {
 						label: __('Show renewal price', 'whmcs-pi'),
 						help: __(
 							'Recommended: on new gTLDs the first year is often promotional.',

@@ -1,0 +1,85 @@
+/**
+ * WHMCS Price Integration — domain price block
+ *
+ * @author            Astral Internet inc.
+ * @copyright         Copyright (C) 2021-2026, Astral Internet inc. - support@astralinternet.com
+ * @license           http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3 or higher
+ *
+ * Deliberately colour-free. The block sits inside whatever section an author
+ * drops it into — a white page, a coloured call to action — so every rule here
+ * inherits the surrounding text colour and varies only size, weight and
+ * opacity. Hard-coding a colour would break the block on half its placements.
+ *
+ * @since 1.2.0
+ */
+
+.whmcs-pi-price {
+	text-align: center;
+	margin-block: 1em;
+}
+
+.whmcs-pi-price__label {
+	margin: 0 0 0.35em;
+	font-size: 0.95em;
+	opacity: 0.8;
+}
+
+/**
+ * The amount and its period share a baseline; the renewal note and the
+ * discount each take a line of their own. Without this the three ran together
+ * into a single unreadable sentence.
+ */
+.whmcs-pi-price__body {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: center;
+	gap: 0.15em 0.45em;
+	margin: 0;
+}
+
+.whmcs-pi-price__amount {
+	font-size: 2.5em;
+	font-weight: 700;
+	line-height: 1.05;
+	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
+}
+
+.whmcs-pi-price__period {
+	font-size: 1.05em;
+	opacity: 0.9;
+}
+
+.whmcs-pi-price__renew {
+	flex: 0 0 100%;
+	margin-top: 0.3em;
+	font-size: 0.92em;
+	opacity: 0.82;
+}
+
+/* Le rabais mérite d'être vu : encadré, mais sans couleur propre. */
+.whmcs-pi-price__promo {
+	flex: 0 0 auto;
+	margin-top: 0.65em;
+	margin-inline: auto;
+	padding: 0.25em 0.9em;
+	border: 1px solid currentColor;
+	border-radius: 2em;
+	font-size: 0.9em;
+	font-weight: 600;
+}
+
+/* Le rabais force un retour à la ligne avant lui. */
+.whmcs-pi-price__renew + .whmcs-pi-price__promo,
+.whmcs-pi-price__period + .whmcs-pi-price__promo {
+	flex-basis: 100%;
+	max-width: max-content;
+}
+
+/* Sous 480 px, un montant à 2.5em déborde des petites colonnes. */
+@media (max-width: 480px) {
+	.whmcs-pi-price__amount {
+		font-size: 2em;
+	}
+}
