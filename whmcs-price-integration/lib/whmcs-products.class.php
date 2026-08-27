@@ -4,12 +4,12 @@
  * WHMCS Price Integration
  * 
  * @author            Astral Internet inc.
- * @copyright         2021 Copyright (C) 2021, Astral Internet inc. - support@astralinternet.com
+ * @copyright         Copyright (C) 2021-2026, Astral Internet inc. - support@astralinternet.com
  * @license           http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3 or higher
  * 
  * @wordpress-plugin
  * Plugin Name: 		WHMCS Price Integration
- * Plugin URI:      	https://github.com/AstralInternet/WHMCS-Price-Integration
+ * Plugin URI:      	https://github.com/AstralInternet/WHMCS-Price-Integration-for-WordPress
  * Description:			Provide the ability to add WHMCS prices directly inside a WordPress page using the WHMCS API and WordPRess Gutenberg block.
  * Version:         	0.1
  * Author:				Astral Internet inc.
@@ -33,6 +33,17 @@ defined('ABSPATH') or die('No script kiddies please!');
  */
 class Products extends whmcsAPI
 {
+    /**
+     * How long a cached product stays warm.
+     *
+     * Product definitions and promotions change on the order of weeks, so
+     * the previous one hour window meant twenty-four API calls a day for
+     * data that had not moved.
+     *
+     * @since 1.0.0
+     */
+    const CACHE_TTL = DAY_IN_SECONDS;
+
 
     // Array for the periods
     private $_periods = array('1mois' => 'monthly', '3mois' => 'quarterly', '6mois' => 'semiannually', '1an' => 'annually', '2ans' => 'biennially', '3ans' => 'triennially');
@@ -102,8 +113,8 @@ class Products extends whmcsAPI
                 // Check the timestamp of the product
                 $currentTime = microtime(true);
 
-                // If the time diference between the last save is longer then 1 hours, force a refresh
-                if (($currentTime - $productDBInfo['timestamp']) > 3600) {
+                // Refresh once the cached copy is older than the TTL
+                if (($currentTime - $productDBInfo['timestamp']) > self::CACHE_TTL) {
                     $passDBCheck = true;
                 }
             }
@@ -120,10 +131,18 @@ class Products extends whmcsAPI
             // Make our API call and get the data
             $data = $this->Whmcs_API_Call('GetProducts', $apiArg);
 
-            // Check for API Error
-            if ($data->result == 'error') {
+            /**
+             * Any failure keeps the cached copy instead of overwriting it.
+             * The previous test dereferenced $data without checking that the
+             * call had returned anything at all.
+             */
+            if (!self::Is_Successful($data) || !isset($data->products->product)) {
 
-                // Return the data with the error message
+                if (isset($productDBInfo['data'])) {
+                    return $productDBInfo['data'];
+                }
+
+                // Nothing cached: hand the error back so it can be shown.
                 return $data;
             }
 
@@ -136,7 +155,7 @@ class Products extends whmcsAPI
             // Save the content with timestamp to speedup site load time
             $productDBInfo['timestamp'] = microtime(true);
             $productDBInfo['data'] = $data;
-            update_option('whmcs-pi_pid-' . $p_pid, $productDBInfo);
+            update_option('whmcs-pi_pid-' . $p_pid, $productDBInfo, 'no');
         } else {
 
             // Get the data from the array saved in the DB
@@ -176,8 +195,8 @@ class Products extends whmcsAPI
                 // Check the timestamp of the product
                 $currentTime = microtime(true);
 
-                // If the time diference between the last save is longer then 1 hours, force a refresh
-                if (($currentTime - $promoDBInfo['timestamp']) > 3600) {
+                // Refresh once the cached copy is older than the TTL
+                if (($currentTime - $promoDBInfo['timestamp']) > self::CACHE_TTL) {
                     $passDBCheck = true;
                 }
             }
@@ -187,15 +206,24 @@ class Products extends whmcsAPI
         if ($passDBCheck) {
 
             // Make our API call and get the data
-            $data = $this->Whmcs_API_Call('GetPromotions');
+            $response = $this->Whmcs_API_Call('GetPromotions');
+
+            // A failed call must not flush the cached promotions.
+            if (!self::Is_Successful($response) || !isset($response->promotions->promotion)) {
+
+                $data = isset($promoDBInfo['data']) ? $promoDBInfo['data'] : array();
+                $this->_promotions = $data;
+
+                return $data;
+            }
 
             // Sort out the promotions
-            $data = $this->_OrganizePromotions($data->promotions->promotion);
+            $data = $this->_OrganizePromotions($response->promotions->promotion);
 
             // Save the content with timestamp to speedup site load time
             $promoDBInfo['timestamp'] = microtime(true);
             $promoDBInfo['data'] = $data;
-            update_option('whmcs-pi_pid-promotion', $promoDBInfo);
+            update_option('whmcs-pi_pid-promotion', $promoDBInfo, 'no');
         } else {
 
             // The file exist and is valid, load it instead of creating a new one
@@ -301,7 +329,14 @@ class Products extends whmcsAPI
                     $pageArray[$periodShort]['promo'] = $promotionName;
 
                     // Set the regular price with the value of the pricing / nbMonths
-                    $regPrice = strval(number_format($product->pricing->CAD->$periodLongComparable / $this->_numberMonths[$periodLongComparable], 2, '.', ''));
+                    $diviseur = isset($this->_numberMonths[$periodLongComparable])
+                        ? (float) $this->_numberMonths[$periodLongComparable]
+                        : 0.0;
+
+                    // Guard the division: an unknown billing period must not be fatal.
+                    $regPrice = $diviseur > 0
+                        ? strval(number_format($product->pricing->CAD->$periodLongComparable / $diviseur, 2, '.', ''))
+                        : '0.00';
                     $pageArray[$periodShort]['prixreg'] = $regPrice;
 
 
@@ -346,7 +381,14 @@ class Products extends whmcsAPI
                 // Set our basic informations
                 $pageArray[$periodShort]['promo'] = '';
                 $pageArray[$periodShort]['prixreg'] = '';
-                $pageArray[$periodShort]['prix'] = strval(number_format($product->pricing->CAD->$periodLongComparable / $this->_numberMonths[$periodLongComparable], 2, '.', ''));
+                $diviseur = isset($this->_numberMonths[$periodLongComparable])
+                    ? (float) $this->_numberMonths[$periodLongComparable]
+                    : 0.0;
+
+                // Guard the division: an unknown billing period must not be fatal.
+                $pageArray[$periodShort]['prix'] = $diviseur > 0
+                    ? strval(number_format($product->pricing->CAD->$periodLongComparable / $diviseur, 2, '.', ''))
+                    : '0.00';
                 $pageArray[$periodShort]['sauver'] = '';
             }
         }

@@ -2,26 +2,13 @@
 
 /**
  * WHMCS Price Integration
- * 
- * @author            Astral Internet inc.
- * @copyright         2021 Copyright (C) 2021, Astral Internet inc. - support@astralinternet.com
- * @license           http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3 or higher
- * 
- * @wordpress-plugin
- * Plugin Name: 		WHMCS Price Integration
- * Plugin URI:      	https://github.com/AstralInternet/WHMCS-Price-Integration
- * Description:			Provide the ability to add WHMCS prices directly inside a WordPress page using the WHMCS API and WordPRess Gutenberg block.
- * Version:         	0.1
- * Author:				Astral Internet inc.
- * Author URI:			https://www.astralinternet.com/fr
- * License:				GPL v3
- * License URI:			http://www.gnu.org/licenses/gpl-3.0.html
- * Text Domain: 		whmcs-pi
- * Domain Path:     	/i18n
- * Requires at least:	5.0.0
- * Requires PHP:		7.2
  *
- * 
+ * @author            Astral Internet inc.
+ * @copyright         Copyright (C) 2021-2026, Astral Internet inc. - support@astralinternet.com
+ * @license           http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3 or higher
+ *
+ * @package           WHMCS_PI
+ * @since             1.0.0
  */
 
 // If this file is called directly, abort.
@@ -29,11 +16,52 @@ defined('ABSPATH') or die('No script kiddies please!');
 
 
 /**
- * Class that handles the products and domains from whcms
+ * Class that handles the domains pricing coming from WHMCS.
  */
 class Domains extends whmcsAPI
 {
 
+	/**
+	 * Option holding the cached TLD table.
+	 *
+	 * @since 1.0.0
+	 */
+	const CACHE_OPTION = 'whmcs-domainsTLD';
+
+	/**
+	 * How long the cache stays warm. Refreshed daily by cron; a page view only
+	 * pulls from WHMCS when the cache is missing entirely.
+	 *
+	 * Domain price lists change once or twice a year — the previous one hour
+	 * window meant twenty-four needless API calls a day.
+	 *
+	 * @since 1.0.0
+	 */
+	const CACHE_TTL = DAY_IN_SECONDS;
+
+	/**
+	 * Past this age the cached prices are considered untrustworthy and the
+	 * shortcodes render nothing. Showing no price beats showing a wrong one.
+	 *
+	 * @since 1.0.0
+	 */
+	const CACHE_MAX_AGE = 7 * DAY_IN_SECONDS;
+
+	/**
+	 * Back-off applied after a failed call, so an unreachable WHMCS is not
+	 * retried on every single page view. Without it a WHMCS outage turns into
+	 * a ten second wait on every page that displays a price.
+	 *
+	 * @since 1.0.1
+	 */
+	const FAILURE_BACKOFF = 15 * MINUTE_IN_SECONDS;
+
+	/**
+	 * Transient guarding the back-off window.
+	 *
+	 * @since 1.0.1
+	 */
+	const BACKOFF_KEY = 'whmcs_pi_api_backoff';
 
 	/**
 	 * Constructor
@@ -44,158 +72,211 @@ class Domains extends whmcsAPI
 	 */
 	public function __construct($p_apiID, $p_apiSecret, $p_apiUrl, $p_apiKey)
 	{
-
-		// Assign all our properties
-		$this->_apiID = $p_apiID;
-		$this->_apiSecret = $p_apiSecret;
-		$this->_apiUrl = $p_apiUrl;
-		$this->_apiKey = $p_apiKey;
+		parent::__construct($p_apiID, $p_apiSecret, $p_apiUrl, $p_apiKey);
 	}
 
 	/**
-	 * function to return TLD detailled information
-	 * 
-	 * @param string the TLD to retreive the info
-	 * @param boolean Force a new API query
-	 * @return array the TLD information
+	 * function to return TLD categories
+	 *
+	 * @param boolean $p_forceNew Force a new API query
+	 * @return array the TLD categories, empty when unavailable
 	 */
 	public function Get_TLD_Categories($p_forceNew = false)
 	{
-
-		// Start by pulling the TLD information
 		$tldsInfo = $this->Get_Whmcs_TLD_List($p_forceNew);
 
-		// Return the TLD information detail
-		return $tldsInfo['categories'];
+		return isset($tldsInfo['categories']) ? $tldsInfo['categories'] : array();
 	}
 
 	/**
-	 * function to return TLD detailled information
-	 * 
-	 * @param string the TLD to retreive the info
-	 * @param boolean Force a new API query
-	 * @return array the TLD information
+	 * function to return TLD detailed information
+	 *
+	 * @param string $p_tld the TLD to retrieve the info for
+	 * @param boolean $p_forceNew Force a new API query
+	 * @return array the TLD information, empty array when unknown
 	 */
 	public function Get_TLD_Detail($p_tld, $p_forceNew = false)
 	{
+		$tld = ltrim(strtolower(trim((string) $p_tld)), '.');
 
-		// Start by pulling the TLD information
+		if ($tld === '') {
+			return array();
+		}
+
 		$tldsInfo = $this->Get_Whmcs_TLD_List($p_forceNew);
 
-		// Check if the current TLD exist
-		if (array_key_exists($p_tld, $tldsInfo['tlddetail'])) {
-
-			// Return the TLD information detail
-			return $tldsInfo['tlddetail'][$p_tld];
-		} else {
-
-			// Return error message
-			return 'TLD not found';
+		if (!isset($tldsInfo['tlddetail']) || !array_key_exists($tld, $tldsInfo['tlddetail'])) {
+			return array();
 		}
+
+		return $tldsInfo['tlddetail'][$tld];
 	}
 
 	/**
-	 * Function that will call the WHMCS API and return the complete list of TLD in the system
-	 * It will also update the WordPress Database
-	 * @param array whmcs api name, key and url
-	 * @return array Array containing all the information about all the tlds
+	 * Age of the cached table, in seconds.
+	 *
+	 * @since 1.0.0
+	 * @return float|null Null when nothing has ever been cached.
+	 */
+	public function Get_Cache_Age()
+	{
+		$cache = get_option(self::CACHE_OPTION);
+
+		if (!is_array($cache) || empty($cache['timestamp'])) {
+			return null;
+		}
+
+		return microtime(true) - $cache['timestamp'];
+	}
+
+	/**
+	 * Whether the cache is too old to be shown to a visitor.
+	 *
+	 * @since 1.0.0
+	 * @return bool
+	 */
+	public function Is_Cache_Stale()
+	{
+		$age = $this->Get_Cache_Age();
+
+		return $age === null || $age > self::CACHE_MAX_AGE;
+	}
+
+	/**
+	 * Return the complete list of TLDs, from cache or from the API.
+	 *
+	 * A failed API call never overwrites the cache. The previous version wrote
+	 * the empty result straight over the good data, so a single network hiccup
+	 * wiped every price on the site until the next successful call.
+	 *
+	 * @param boolean $p_forceNew Skip the cache and pull from WHMCS
+	 * @return array Array containing all the information about all the TLDs
 	 */
 	public function Get_Whmcs_TLD_List($p_forceNew = false)
 	{
+		$cache = get_option(self::CACHE_OPTION);
+		$cached = (is_array($cache) && isset($cache['data']) && is_array($cache['data']))
+			? $cache['data']
+			: null;
 
-		// Define a variable to trigger if can bypass the API CAll
-		$passDBCheck = $p_forceNew;
+		if (!$p_forceNew && $cached !== null) {
 
-		// Pull out the information from the DB if it is present
-		if (!$passDBCheck) {
+			$age = microtime(true) - (isset($cache['timestamp']) ? $cache['timestamp'] : 0);
 
-			$domainsDBInfo = get_option('whmcs-domainsTLD');
-
-			// If the db was non existant, we need to proceed to the API call
-			if (!$domainsDBInfo) {
-				$passDBCheck = true;
-			} else {
-
-				// Check the timestamp of the product
-				$currentTime = microtime(true);
-
-				// If the time diference between the last save is longer then 1 hours, force a refresh
-				if (($currentTime - $domainsDBInfo['timestamp']) > 3600) {
-					$passDBCheck = true;
-				}
+			if ($age <= self::CACHE_TTL) {
+				return $cached;
 			}
 		}
 
 		/**
-		 * Make the API call the WHMCS
+		 * A recent failure means WHMCS is down or slow. Serving the stale cache
+		 * beats making every visitor wait for the same timeout.
 		 */
-		if ($passDBCheck) {
+		if (!$p_forceNew && get_transient(self::BACKOFF_KEY)) {
+			return $cached !== null ? $cached : array('categories' => array(), 'tlddetail' => array());
+		}
 
-			// Fetch WHMCS domain list and prices
-			$apiValues['action'] = 'GetTLDPricing';
-			$whmcsApiTld = $this->Whmcs_API_Call('GetTLDPricing');
+		$response = $this->Whmcs_API_Call('GetTLDPricing');
 
-			// Build a usable array for the display
-			foreach ($whmcsApiTld->pricing as $tld => $details) {
+		// Anything short of a usable payload: keep what we already have.
+		if (!self::Is_Successful($response) || !isset($response->pricing)) {
 
+			set_transient(self::BACKOFF_KEY, 1, self::FAILURE_BACKOFF);
 
-				// Proceed only if we got a TLD with a price
-				if (property_exists($details, 'register')) {
-    				if (property_exists($details->register, '1')) {
-        				if ($details->register->{'1'} > 0) {
-        
-        					// Get the detail per TLD
-        					$whmcsTLD['tlddetail'][$tld]['reg_price'] = $details->register->{'1'};
-        					$whmcsTLD['tlddetail'][$tld]['categories'] = $details->categories;
-        					$whmcsTLD['tlddetail'][$tld]['flag'] = $details->group;
-        					$whmcsTLD['tlddetail'][$tld]['renew'] = $details->renew->{'1'};
-        
-        					// Set promotion variable in the array
-        					if ($whmcsTLD['tlddetail'][$tld]['reg_price'] < $whmcsTLD['tlddetail'][$tld]['renew']) {
-        
-        						// Get discount amount 
-        						$whmcsTLD['tlddetail'][$tld]['discount_amount'] = $whmcsTLD['tlddetail'][$tld]['renew']  - $whmcsTLD['tlddetail'][$tld]['reg_price'];
-        
-        						// div / 0 protection
-        						if ($whmcsTLD['tlddetail'][$tld]['renew'] > 0) {
-        
-        							// Get discount pourcentage
-        							$whmcsTLD['tlddetail'][$tld]['discount_pourc'] =  round((1 - ($whmcsTLD['tlddetail'][$tld]['reg_price'] / $whmcsTLD['tlddetail'][$tld]['renew'])) * 100, 0);
-        						}
-        
-        						// set promo trigger
-        						$whmcsTLD['tlddetail'][$tld]['promo'] = 1;
-        					} else {
-        						// set promo trigger
-        						$whmcsTLD['tlddetail'][$tld]['promo'] = 0;
-        					}
-        
-        					// Add all tld in the "All" category
-        					$whmcsTLD['categories']['all'][] = $tld;
-        					// Create categories for each TLD
-        					foreach ($details->categories as $category) {
-        						$whmcsTLD['categories'][$category][] = $tld;
-        					}
-        					// Create categorie by flag if available
-        					if ($details->group != '') {
-        						$whmcsTLD['categories'][$details->group][] = $tld;
-        					}
-        				}
-    				}
+			if ($cached !== null) {
+				return $cached;
+			}
+
+			return array('categories' => array(), 'tlddetail' => array());
+		}
+
+		$parsed = $this->_ParsePricing($response->pricing);
+
+		// An empty parse means WHMCS answered but returned no priced TLD. That
+		// is almost always a configuration slip rather than a real catalogue
+		// change, so the existing cache wins.
+		if (empty($parsed['tlddetail']) && $cached !== null) {
+			return $cached;
+		}
+
+		// A good answer clears any pending back-off.
+		delete_transient(self::BACKOFF_KEY);
+
+		update_option(
+			self::CACHE_OPTION,
+			array('timestamp' => microtime(true), 'data' => $parsed),
+			'no' // never autoload: this table holds several hundred TLDs
+		);
+
+		return $parsed;
+	}
+
+	/**
+	 * Turn the WHMCS pricing payload into the array the shortcodes expect.
+	 *
+	 * @since 1.0.0
+	 * @param object $p_pricing The "pricing" node of a GetTLDPricing response
+	 * @return array
+	 */
+	private function _ParsePricing($p_pricing)
+	{
+		$whmcsTLD = array('categories' => array(), 'tlddetail' => array());
+
+		foreach ($p_pricing as $tld => $details) {
+
+			if (!isset($details->register->{'1'}) || !($details->register->{'1'} > 0)) {
+				continue;
+			}
+
+			$key = ltrim(strtolower((string) $tld), '.');
+
+			$register = (float) $details->register->{'1'};
+			$renew = isset($details->renew->{'1'}) ? (float) $details->renew->{'1'} : $register;
+			/**
+			 * Sanitise on the way in rather than at every display site. WHMCS is a
+			 * separate system with its own operators; treating its output as
+			 * untrusted text here protects every consumer at once, including any
+			 * future one.
+			 */
+			$categories = isset($details->categories) ? (array) $details->categories : array();
+			$categories = array_values(array_filter(array_map(
+				function ($c) { return sanitize_text_field((string) $c); },
+				$categories
+			)));
+
+			$group = isset($details->group) ? sanitize_text_field((string) $details->group) : '';
+
+			$entry = array(
+				'reg_price'  => $register,
+				'renew'      => $renew,
+				'categories' => $categories,
+				'flag'       => $group,
+				'promo'      => 0,
+			);
+
+			// First year cheaper than renewal means a promotional rate.
+			if ($register < $renew) {
+
+				$entry['promo'] = 1;
+				$entry['discount_amount'] = $renew - $register;
+
+				if ($renew > 0) {
+					$entry['discount_pourc'] = (int) round((1 - ($register / $renew)) * 100, 0);
 				}
 			}
 
-			// Save the content with timestamp to speedup site load time
-			$domainsDBInfo['timestamp'] = microtime(true);
-			$domainsDBInfo['data'] = $whmcsTLD;
-			update_option('whmcs-domainsTLD', $domainsDBInfo);
-		} else {
+			$whmcsTLD['tlddetail'][$key] = $entry;
+			$whmcsTLD['categories']['all'][] = $key;
 
-			// Return the information from the DB
-			$whmcsTLD = $domainsDBInfo['data'];
+			foreach ($categories as $category) {
+				$whmcsTLD['categories'][$category][] = $key;
+			}
+
+			if ($group !== '') {
+				$whmcsTLD['categories'][$group][] = $key;
+			}
 		}
 
-		// Return the list of domain in a usable format
 		return $whmcsTLD;
 	}
 }

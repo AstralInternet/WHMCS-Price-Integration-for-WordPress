@@ -2,29 +2,27 @@
 
 /**
  * WHMCS Price Integration
- * 
+ *
  * @author            Astral Internet inc.
- * @copyright         2021 Copyright (C) 2021, Astral Internet inc. - support@astralinternet.com
+ * @copyright         Copyright (C) 2021-2026, Astral Internet inc. - support@astralinternet.com
  * @license           http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3 or higher
- * 
+ *
  * @wordpress-plugin
  * Plugin Name: 		WHMCS Price Integration
- * Plugin URI:      	https://github.com/AstralInternet/WHMCS-Price-Integration
- * Description:			Provide the ability to add WHMCS prices directly inside a WordPress page using the WHMCS API and WordPRess Gutenberg block.
- * Version:         	0.1
+ * Plugin URI:      	https://github.com/AstralInternet/WHMCS-Price-Integration-for-WordPress
+ * Description:			Display WHMCS product and domain prices inside WordPress pages, through a Gutenberg block or a shortcode.
+ * Version:         	1.0.1
  * Author:				Astral Internet inc.
  * Author URI:			https://www.astralinternet.com/fr
  * License:				GPL v3
  * License URI:			http://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: 		whmcs-pi
- * Domain Path:     	/i18n
- * Requires at least:	3.5.0
- * Requires PHP:		5.3
- *
- * 
+ * Domain Path:     	/languages
+ * Requires at least:	5.8
+ * Requires PHP:		7.4
  */
 
- // If this file is called directly, abort.
+// If this file is called directly, abort.
 defined('ABSPATH') or die('No script kiddies please!');
 
 /**
@@ -35,7 +33,14 @@ defined('ABSPATH') or die('No script kiddies please!');
 define('WHMCS_PI_NAME', 'WHMCS Price Integration');
 
 /**
- * Declare the main plugin file, if not alreay declared
+ * Current plugin version, used to trigger the upgrade routine.
+ *
+ * @since 1.0.0
+ */
+define('WHMCS_PI_VERSION', '1.0.1');
+
+/**
+ * Declare the main plugin file, if not already declared
  *
  * @since 1.0.0
  */
@@ -53,15 +58,18 @@ require_once plugin_dir_path(__FILE__) . 'lib/main.class.php';
 // Load the WHMCS API Class
 require_once plugin_dir_path(__FILE__) . 'lib/whmcsAPI_call.class.php';
 
-// Load the WHMCS Product Class
+// Load the WHMCS Domain Class
 require_once plugin_dir_path(__FILE__) . 'lib/whmcs-domains.class.php';
 
-// Load the WHMCS Domain Class
+// Load the WHMCS Product Class
 require_once plugin_dir_path(__FILE__) . 'lib/whmcs-products.class.php';
 
 // Load the shortcode handling
 require_once plugin_dir_path(__FILE__) . 'lib/products_shortcode.php';
 require_once plugin_dir_path(__FILE__) . 'lib/domains_shortcode.php';
+
+// Load the Gutenberg block
+require_once plugin_dir_path(__FILE__) . 'lib/block.php';
 
 // Set module local setting
 WHMCS_PI_Main::set_locale();
@@ -69,8 +77,38 @@ WHMCS_PI_Main::set_locale();
 // Register the activation hook
 register_activation_hook(__FILE__, 'WHMCS_PI_Main::activate');
 
+// Release the scheduled refresh when the plugin is switched off
+register_deactivation_hook(__FILE__, 'WHMCS_PI_Main::deactivate');
+
 // Register the uninstall hook
 register_uninstall_hook(__FILE__, 'WHMCS_PI_Main::uninstall');
 
-// Add the WHMCS Menu in the dashboard "options" menu
+// Add the WHMCS Menu in the dashboard "tools" menu
 add_action('admin_menu', 'WHMCS_PI_Main::add_tools_menu');
+
+// Background refresh of the WHMCS caches, so no visitor ever waits on the API
+add_action(WHMCS_PI_Main::CRON_HOOK, 'WHMCS_PI_Main::refresh_caches');
+
+/**
+ * Run the upgrade routine once per version change.
+ *
+ * Credentials saved before 1.0.0 use an encryption format that broke roughly
+ * one save in six; they are re-encrypted here rather than asking anyone to
+ * type them again.
+ *
+ * @since 1.0.0
+ * @return void
+ */
+function whmcs_pi_maybe_upgrade()
+{
+    if (get_option('whmcs-pi_version') === WHMCS_PI_VERSION) {
+        return;
+    }
+
+    WHMCS_PI_Main::migrate_credentials();
+    WHMCS_PI_Main::schedule_refresh();
+
+    update_option('whmcs-pi_version', WHMCS_PI_VERSION, 'no');
+}
+
+add_action('admin_init', 'whmcs_pi_maybe_upgrade');

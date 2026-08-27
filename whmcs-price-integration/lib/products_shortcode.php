@@ -4,12 +4,12 @@
  * WHMCS Price Integration
  * 
  * @author            Astral Internet inc.
- * @copyright         2021 Copyright (C) 2021, Astral Internet inc. - support@astralinternet.com
+ * @copyright         Copyright (C) 2021-2026, Astral Internet inc. - support@astralinternet.com
  * @license           http://www.gnu.org/licenses/gpl-3.0.html GNU General Public License, version 3 or higher
  * 
  * @wordpress-plugin
  * Plugin Name: 		WHMCS Price Integration
- * Plugin URI:      	https://github.com/AstralInternet/WHMCS-Price-Integration
+ * Plugin URI:      	https://github.com/AstralInternet/WHMCS-Price-Integration-for-WordPress
  * Description:			Provide the ability to add WHMCS prices directly inside a WordPress page using the WHMCS API and WordPRess Gutenberg block.
  * Version:         	0.1
  * Author:				Astral Internet inc.
@@ -23,6 +23,9 @@
  *
  * 
  */
+// If this file is called directly, abort.
+defined('ABSPATH') or die('No script kiddies please!');
+
 
 
 /**
@@ -189,7 +192,10 @@ function whmcs_products_func_clean_attribute($p_attr)
 
     // Convert value into real boolean
     foreach ($boolAttribute as $singleAttribute) {
-        $attribute[$singleAttribute] =  boolval($attribute[$singleAttribute]);
+        // "false" and "0" must read as false; boolval() says true for both.
+        $attribute[$singleAttribute] = filter_var(
+            $attribute[$singleAttribute], FILTER_VALIDATE_BOOLEAN
+        );
     }
 
     // Make sure the pid is in int format
@@ -233,16 +239,43 @@ function whmcs_products_func_validade_api_call($p_apiResponse)
     // Define response array
     $ans = array('success' => true, 'msg' => '');
 
-    // Check for a API call problem
-    if (is_object($p_apiResponse)) {
-        if (property_exists($p_apiResponse, 'result')) {
+    // A null response means the call could not be completed at all. Treating
+    // that as success let the caller walk into a missing payload.
+    if (!is_object($p_apiResponse)) {
 
-            if ($p_apiResponse->result == 'error') {
-                $ans['success'] = false;
-                $ans['msg'] = __("Error while making the API call : " . $p_apiResponse->message, "whmcs-pi");
-                $ans['msg'] = whmcs_products_func_prepareOutput($ans['msg'], '', '', '', true);
-            }
+        $ans['success'] = false;
+        $ans['msg'] = whmcs_products_func_prepareOutput(
+            __('Pricing is temporarily unavailable.', 'whmcs-pi'), '', '', '', true
+        );
+
+        return $ans;
+    }
+
+    // Check for a API call problem
+    if (property_exists($p_apiResponse, 'result') && $p_apiResponse->result == 'error') {
+
+        $ans['success'] = false;
+
+        $detail = isset($p_apiResponse->message) ? (string) $p_apiResponse->message : '';
+
+        /**
+         * WHMCS phrases its own errors, and that wording can name internal
+         * paths or configuration details. This string lands on a public page,
+         * so only an administrator sees the detail — everyone else gets a
+         * neutral sentence.
+         */
+        if ($detail !== '' && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[whmcs-pi] WHMCS API error: ' . $detail);
         }
+
+        if ($detail !== '' && current_user_can('manage_options')) {
+            /* translators: %s: error message returned by WHMCS */
+            $texte = sprintf(__('WHMCS API error: %s', 'whmcs-pi'), $detail);
+        } else {
+            $texte = __('Pricing is temporarily unavailable.', 'whmcs-pi');
+        }
+
+        $ans['msg'] = whmcs_products_func_prepareOutput($texte, '', '', '', true);
     }
 
     // Return the validation result
@@ -312,8 +345,18 @@ function whmcs_products_func_validade_pid($p_pid)
 function whmcs_products_func_prepareOutput($p_msg, $p_class, $p_prefix = '', $p_suffix = '', $p_isError = false)
 {
 
-    // Prepare the class the be added to the return object
-    $class = 'class="whmcs_products ' . $p_class . '"';
+    /**
+     * The class may come from a shortcode attribute, the message and its
+     * affixes from WHMCS. Each is escaped for its own context: attribute for
+     * the class, wp_kses_post for the message since product descriptions
+     * legitimately carry simple markup, plain text for the affixes.
+     */
+    $classes = implode(' ', array_filter(array_map(
+        'sanitize_html_class',
+        preg_split('/\s+/', trim((string) $p_class))
+    )));
+
+    $class = 'class="' . esc_attr(trim('whmcs_products ' . $classes)) . '"';
 
     // If there is an error, prepare extra styling
     $style = "";
@@ -322,7 +365,11 @@ function whmcs_products_func_prepareOutput($p_msg, $p_class, $p_prefix = '', $p_
     }
 
     // Prepare the response string
-    $response = "<span $class $style>$p_prefix$p_msg$p_suffix</span>";
+    $response = '<span ' . $class . ' ' . $style . '>'
+        . esc_html($p_prefix)
+        . wp_kses_post($p_msg)
+        . esc_html($p_suffix)
+        . '</span>';
 
     // Return the response
     return $response;

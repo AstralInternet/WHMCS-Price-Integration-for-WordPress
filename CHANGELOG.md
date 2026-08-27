@@ -1,0 +1,169 @@
+# Changelog
+
+All notable changes to WHMCS Price Integration for WordPress.
+
+## 1.0.1
+
+Security and robustness pass, following a full audit of the boundary between
+WordPress and WHMCS. No critical vulnerability was found: there is no path for an
+anonymous visitor to reach the WHMCS credentials, execute code, or escalate
+privileges, and no SQL injection. The items below are hardening.
+
+### Security
+
+**Output escaping on the grouped display paths.** `whmcs_TLD_Category_To_HTML_Ul()`,
+`whmcs_TLD_To_HTML_Table()` and `whmcs_products_func_prepareOutput()` wrote WHMCS
+values straight into HTML. TLD names, category names, group flags, prices and the
+cart URL are now escaped for their exact context — `esc_attr()` for attributes,
+`esc_html()` for text nodes, `esc_url()` for links. Product descriptions go
+through `wp_kses_post()` rather than being stripped, since they legitimately
+carry simple markup.
+
+**Sanitising on ingestion.** Category names and group flags are passed through
+`sanitize_text_field()` in `_ParsePricing()` before being cached. One point of
+control protects every consumer at once, present and future, rather than relying
+on each display site remembering to escape.
+
+**HTTPS is now required.** `_ResolveEndpoint()` documented a refusal of non-TLS
+URLs but only added `https://` when no scheme was present at all; an explicit
+`http://` passed through untouched, which made `sslverify` moot and sent the API
+identifier and secret over the network in clear text. `http://` is now rejected,
+both when building the endpoint and when saving the settings form.
+
+**Shortcode attributes are sanitised.** `tldbtnclass` and `class` reached the
+`class` attribute of generated markup unfiltered, so any author able to place a
+shortcode controlled it. Both are now reduced through `sanitize_html_class()`.
+
+**The encryption key no longer degrades silently.** It is derived from the
+WordPress secret salts; when those were missing — or left at the placeholder
+shipped in `wp-config-sample.php` — the key came from a publicly known string and
+the encryption protected nothing. The plugin now refuses to store credentials at
+all in that situation, and says so on the settings screen.
+
+**WHMCS error messages no longer reach public pages.** WHMCS phrases its own
+errors, and that wording can name internal paths or configuration details. Only
+administrators see the detail now; everyone else gets a neutral sentence. A null
+API response is also treated as a failure rather than a success.
+
+### Availability
+
+**Negative cache.** Between cache expiry and the staleness limit, a page view
+could still trigger a blocking API call — and with no memory of failure, every
+subsequent view retried. An unreachable WHMCS therefore meant a ten second wait
+on every page carrying a price. A fifteen minute back-off is now set after any
+failure and cleared on the first success.
+
+**The staleness rule now covers the grouped view.** `[whmcs_domainsdisplayall]`
+bypassed the seven day limit that the other shortcodes respect.
+
+### Robustness
+
+- Two possible divisions by zero in the product price calculation, when the
+  billing period is unknown, are now guarded.
+
+### Notes for maintainers
+
+- The `Tested up to` field in `README.md` has not been re-verified; update it
+  after testing against your own WordPress version.
+- When deploying, restrict the WHMCS API credential by IP address and grant it
+  only the three roles the plugin uses: `GetTLDPricing`, `GetProducts`,
+  `GetPromotions`. An access key configured in WHMCS bypasses the IP
+  restriction, so leave that field empty.
+
+---
+
+## 1.0.0
+
+Full modernisation from 0.1. The plugin could no longer authenticate against
+WHMCS 8.x or 9.x, and three defects could affect site availability.
+
+### Fixed — blocking
+
+**API authentication.** Moved from the legacy admin `username` / `password` /
+`accesskey` pair to **API credentials** (`identifier` / `secret`). WHMCS removed
+the legacy method; the plugin simply could not connect to a current install.
+
+**Credential encryption.** The stored payload joined the ciphertext and the
+initialisation vector with a `|`. Both are raw bytes, so either could contain
+that character and break the split — measured at **21.4% of saves over 4,000
+trials**, failing silently. The symptom was an "invalid credential" message that
+came and went, which is a hard thing to diagnose.
+
+The IV is now written as a fixed length prefix, with no separator. Existing
+values are migrated automatically on upgrade: the legacy layout put the IV in the
+last 16 bytes, so the separator always sat at `length - 17` and every stored
+value is recoverable by position — **including the ones the old code could no
+longer read**. Nothing needs to be re-entered.
+
+**Request timeout.** cURL was used with no `CURLOPT_TIMEOUT`. Replaced with
+`wp_remote_post()` at a 10 second timeout, with explicit TLS verification, so an
+unresponsive WHMCS can no longer hang page rendering.
+
+**Cache protection.** A failed API call no longer overwrites cached data. The
+previous version wrote the empty result over valid prices, so a single network
+hiccup wiped every price on the site until the next successful call. Fixed across
+all three caches — TLDs, products and promotions.
+
+### Performance
+
+- Refresh moved to **WP-Cron**, once a day. No visitor waits on the API.
+- Cache lifetime raised from 1 hour to 24 hours; domain price lists change once
+  or twice a year.
+- All cache options are stored with **autoload disabled**. The full TLD table was
+  previously loaded into memory on every request to the site, including pages
+  that display no price.
+
+### Security
+
+- Explicit `current_user_can()` at the top of the settings screen, in addition to
+  the capability declared on the menu.
+- `$_POST` instead of `$_REQUEST`, with `sanitize_text_field()` and
+  `esc_url_raw()` on input, `esc_attr()` and `esc_html()` on output.
+- **Credentials are no longer sent back to the browser.** The fields are of type
+  `password` and render empty; leaving one blank keeps the stored value. An
+  explicit "clear credentials" action was added.
+- `ABSPATH` guards added to the two shortcode files, which had none despite being
+  reachable by URL.
+- Removed the `print_r()` of the API response from error messages.
+
+### Fixed — functional
+
+- **`[whmcs_domainspromo]` formatted the 0/1 promo flag as currency**, rendering
+  "$0.00" or "$1.00". It now returns the discount as a percentage, or an empty
+  string when the TLD is not on promotion. Pass `format="amount"` for the amount.
+- **`bypasscache` never worked.** `boolval('bypasscache')` evaluated the literal
+  string, always true, and the result was never passed on. Replaced with
+  `filter_var(..., FILTER_VALIDATE_BOOLEAN)` across every shortcode.
+- **Translations never loaded.** The header declared `Domain Path: /i18n` while
+  the files live in `languages/`.
+- Removed a leftover debug `print_r()` in `whmcs_domainsdisplayall`, computed over
+  the whole table on every render and then discarded.
+- `NumberFormatter` now falls back cleanly when ext-intl is unavailable.
+- Version headers reconciled (`Requires PHP: 7.4`, `Requires at least: 5.8`).
+- Uninstall now removes every option, including the TLD cache and the per-product
+  caches.
+- The scheduled event is unregistered on deactivation.
+
+### Added
+
+**Gutenberg block — "WHMCS domain price".** Server rendered, so no price is baked
+into saved post content where it would go stale unnoticed. When the extension
+attribute is left empty the block reads the post slug, which keeps the displayed
+price in step with the page on any post type whose slug is the extension itself.
+
+**`[whmcs_domainsrenew]`** — the renewal price. On new gTLDs the first year is
+often promotional while renewal is markedly higher; showing both alongside is
+plain honesty.
+
+**Cache staleness limit.** Past seven days without a successful refresh, the
+shortcodes and the block render nothing rather than a price that may be wrong.
+
+**Status panel** on the settings screen: whether credentials are set, how many
+extensions are cached, cache age, next scheduled refresh, and a manual refresh
+button.
+
+---
+
+## 0.1
+
+Initial release.

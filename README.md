@@ -1,124 +1,207 @@
 # WHMCS Price Integration for WordPress
 Contributors: @astralinternet, @neutrall, @sleyeur
 Tags: whmcs, api
-Requires at least: 5.0
-Tested up to: 5.7
-Requires PHP: 7.2
-Stable tag: 1.0.0
+Requires at least: 5.8
+Tested up to: 5.8
+Requires PHP: 7.4
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 ## Description
 
-Add some shortcode to into WordPress so one may link WHMCS product prices direcly into his WordPress Installation.
+Display WHMCS product and domain prices directly inside WordPress pages, through
+a Gutenberg block or a shortcode.
 
-- Information in the database is store with the OpenSSL librairy
-- API information must be set from within the "Tools -> WHMCS Price Intergration" menu
+- Prices are pulled from the WHMCS API once a day by WP-Cron and cached, so no
+  visitor ever waits on the API.
+- API credentials are encrypted at rest with OpenSSL, under a key derived from
+  the WordPress secret salts in `wp-config.php`.
+- API settings are configured from **Tools → WHMCS Price Integration**.
 
-The current available shortcode is : 
+See [CHANGELOG.md](CHANGELOG.md) for the release history.
 
-### whmcs_products
+## Requirements and setup
 
-Give the possibility to add product information directly into a wordpress page.
+The plugin authenticates with **WHMCS API credentials** (`identifier` / `secret`),
+created under *Configuration → System Settings → API Credentials*. The legacy
+admin username and password authentication is not supported, and no longer exists
+in current WHMCS versions.
 
-Shortcode attribute : 
+Three things are worth getting right when you create the credential:
 
-- **pid:** The WHMCS pid (integer)
-- **period (default is annualy):** monthly, quarterly, semiannually, annually, biennially, triennially
-- **productname (default is false):** Return the product name
-- **description:** Return the WHMCS product description instead of the regular price
-- **setupfee (default is false):** Return the product setup fee.
-- **showmonthlyprice (default is true):** Show the monthly price. EX, if the price is 120$/year, the code will return 12$/month
-- **promoprice (default is false):** if true, will return the price with the pomotion applied instead of the regular price.
--                                Will return the regular price if there is no promotion price.
-- **promodiscount (default false):** If true, will return the promotion discount value instead of the regular price
-- **promocode (default false):** If true, will return the promotion code instead of the current price
-- **bypasscache (default false):** Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
-- **class (default empty):** Add a custom class name to the output result
-- **whmcsprefix ( default false):** Display the WHMCS define prefix on prices
-- **whmcssuffix ( default false):** Display the WHMCS define suffix on prices
-- **customprefix(default empty):**  Display a custom prefix (will overide WHMCS prefix)
-- **customsuffix(default empty):**  Display a custom suffix (will overide WHMCS suffix)
+- **Restrict it by IP address** to the WordPress server. This is the protection
+  that limits the damage of any credential leak.
+- **Grant only the roles the plugin uses:** `GetTLDPricing`, `GetProducts`,
+  `GetPromotions`. It needs nothing else.
+- **Leave the access key empty.** An access key configured in WHMCS allows calls
+  from unlisted IP addresses, which defeats the IP restriction above.
 
-### whmcs_domainscat
-
-Return the domain category
-
-[whmcs_domainscat tld="com" bypasscache='true"]
-
-Shortcode attribute : 
-
-- **tld:** The domain TLD
-- **bypasscache (default false):** Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
-
-### whmcs_domainsprice
-
-Return the domain price 
-
-[whmcs_domainsprice tld="com" bypasscache='true"]
-
-Shortcode attribute : 
-
-- **tld:** The domain TLD
-- **bypasscache (default false):** Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
-
-### whmcs_domainsdisplayall
-
-Return a list of every available domains or a list of each category
-
-[whmcs_domainsdisplayall display="tld" bypasscache='true"]
-
-Shortcode attribute : 
-
-- **display:** (tld or category): Will either display alSl the categories or a listr of all the TLDS
-- **bypasscache (default false):** Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
-- **tldbtnclass:** : CSS class to be added to the TLD buttons
-
-### whmcs_domainspromo
-
-Return the domain promo price 
-
-[whmcs_domainspromo tld="com" bypasscache='true"]
-
-Shortcode attribute : 
-
-- **tld:** The domain TLD
-- **bypasscache (default false):** Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
-
-### whmcs_domainsflag
-
-Return the domain flag 
-
-[whmcs_domainsflag tld="com" bypasscache='true"]
-
-Shortcode attribute : 
-
-- **tld:** The domain TLD
-- **bypasscache (default false):** Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
-
-### whmcs_domainsdisplayallJS
-
-Add some JS script to hide TLD from display all TLD shortcode when clicking on some category (small pure JS solution)
-
-[whmcs_domainsdisplayallJS docready="true"]
-
-Shortcode attribute : 
-
-- **docready:** Add the equivalent of "$(document).ready(function(){" from jQuery but in a pure JS format.
-
+The WHMCS URL must be `https://`. The API identifier and secret travel in the
+request body, so a plain-text endpoint is refused rather than silently accepted.
 
 ## Installation
 
-1. Upload the plugin files to the /wp-content/plugins/ directory, or install the plugin through the WordPress plugins screen directly.
-2. Activate the plugin through the ‘Plugins’ screen in WordPress
+1. Upload the plugin files to the `/wp-content/plugins/` directory, or install
+   the plugin through the WordPress plugins screen directly.
+2. Activate the plugin through the *Plugins* screen in WordPress.
+3. Enter the WHMCS URL and API credentials under *Tools → WHMCS Price
+   Integration*, then use **Test API connection** to confirm.
+
+## Gutenberg block
+
+**WHMCS domain price** renders the current registration price for a domain
+extension, optionally alongside the renewal price and a discount badge.
+
+Block settings:
+
+- **Extension:** the TLD to price. Leave it empty to use the page slug — on a
+  post type whose slug is the extension itself, this keeps the price and the page
+  in step with no manual entry.
+- **Label:** optional heading shown above the price.
+- **Show renewal price** (default on): on new gTLDs the first year is often
+  promotional while renewal is markedly higher.
+- **Show discount badge** (default on).
+
+The block is rendered server side, so no price is stored in the saved post
+content where it could go stale unnoticed.
+
+## Shortcodes
+
+Every shortcode accepts `bypasscache="true"` to skip the daily cache. The cache
+exists to avoid overloading the WHMCS server; bypassing it is for testing.
+
+If the cached data has not been refreshed for more than seven days, the
+shortcodes render nothing rather than a price that may be wrong.
+
+### whmcs_products
+
+Add product information directly into a WordPress page.
+
+```
+[whmcs_products pid="1" period="annually"]
+```
+
+Shortcode attributes:
+
+- **pid:** the WHMCS product id (integer)
+- **period** (default `annually`): `monthly`, `quarterly`, `semiannually`,
+  `annually`, `biennially`, `triennially`
+- **productname** (default false): return the product name
+- **description:** return the WHMCS product description instead of the price
+- **setupfee** (default false): return the product setup fee
+- **showmonthlyprice** (default true): show the monthly price — a product at
+  $120/year returns $12/month
+- **promoprice** (default false): return the price with the promotion applied
+  instead of the regular price. Falls back to the regular price when there is no
+  promotion
+- **promodiscount** (default false): return the promotion discount value instead
+  of the price
+- **promocode** (default false): return the promotion code instead of the price
+- **bypasscache** (default false)
+- **class** (default empty): add a custom class name to the output
+- **whmcsprefix** (default false): display the WHMCS-defined prefix on prices
+- **whmcssuffix** (default false): display the WHMCS-defined suffix on prices
+- **customprefix** (default empty): custom prefix, overrides the WHMCS prefix
+- **customsuffix** (default empty): custom suffix, overrides the WHMCS suffix
+
+### whmcs_domainsprice
+
+Return the first year registration price of a domain extension.
+
+```
+[whmcs_domainsprice tld="com"]
+```
+
+Attributes: **tld**, **bypasscache**
+
+### whmcs_domainsrenew
+
+Return the renewal price of a domain extension. Worth showing next to the
+registration price on new gTLDs, where the two often differ substantially.
+
+```
+[whmcs_domainsrenew tld="com"]
+```
+
+Attributes: **tld**, **bypasscache**
+
+### whmcs_domainspromo
+
+Return the promotional discount on a domain extension, as a percentage. Returns
+an empty string when the extension is not on promotion.
+
+```
+[whmcs_domainspromo tld="com"]
+[whmcs_domainspromo tld="com" format="amount"]
+```
+
+Attributes:
+
+- **tld:** the domain TLD
+- **format** (default `percent`): `percent` or `amount`
+- **bypasscache** (default false)
+
+### whmcs_domainscat
+
+Return the domain category.
+
+```
+[whmcs_domainscat tld="com"]
+```
+
+Attributes: **tld**, **bypasscache**
+
+### whmcs_domainsflag
+
+Return the domain group flag as defined in WHMCS.
+
+```
+[whmcs_domainsflag tld="com"]
+```
+
+Attributes: **tld**, **bypasscache**
+
+### whmcs_domainsdisplayall
+
+Return a list of every available domain, or a list of each category.
+
+```
+[whmcs_domainsdisplayall display="tld"]
+```
+
+Attributes:
+
+- **display** (`tld` or `category`): display all the TLDs, or the list of
+  categories
+- **tldbtnclass:** CSS class added to the TLD buttons
+- **bypasscache** (default false)
+
+### whmcs_domainsdisplayallJS
+
+Add a small vanilla JavaScript helper that hides TLDs from the "display all"
+shortcode when a category is clicked.
+
+```
+[whmcs_domainsdisplayallJS docready="true"]
+```
+
+Attributes:
+
+- **docready:** wrap the script in the equivalent of jQuery's
+  `$(document).ready()`, in plain JavaScript
 
 ## Using a full domain listing with categories
 
-It is suggested to create a column block with two column. 
+Create a two-column block.
 
-Insert a short code block just before column with the following code `[whmcs_domainsdisplayallJS docReady='true']`. This will add the necessary JS to interact with the two columns.
+Insert a shortcode block just before the columns with
+`[whmcs_domainsdisplayallJS docready="true"]`. This adds the JavaScript needed to
+make the two columns interact.
 
-In the first column, insert shortcode like this `[whmcs_domainsdisplayall bypasscache='true']`. This will add a list of every categorie.
-In the second column, insert shortcode like this `[whmcs_domainsdisplayall display='tld' bypasscache='true']`. This will add a list of every TLDs.
+In the first column, insert `[whmcs_domainsdisplayall]` — this lists every
+category. In the second, insert `[whmcs_domainsdisplayall display="tld"]` — this
+lists every TLD.
 
-You will now be able to show the TLDs based on the selected category. You will need to add CSS to clean the look.
+TLDs can then be filtered by the selected category. Some CSS is needed to finish
+the look.
