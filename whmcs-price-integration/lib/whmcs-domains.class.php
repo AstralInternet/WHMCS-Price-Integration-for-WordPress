@@ -159,21 +159,21 @@ class Domains extends whmcsAPI
 			? $cache['data']
 			: null;
 
-		if (!$p_forceNew && $cached !== null) {
+		$age = ($cached !== null && !empty($cache['timestamp']))
+			? microtime(true) - $cache['timestamp']
+			: null;
 
-			$age = microtime(true) - (isset($cache['timestamp']) ? $cache['timestamp'] : 0);
-
-			if ($age <= self::CACHE_TTL) {
-				return $cached;
-			}
+		// Warm cache: serve it and touch nothing.
+		if (!$p_forceNew && $age !== null && $age <= self::CACHE_TTL) {
+			return $cached;
 		}
 
 		/**
-		 * A recent failure means WHMCS is down or slow. Serving the stale cache
+		 * A recent failure means WHMCS is down or slow. Serving what we have
 		 * beats making every visitor wait for the same timeout.
 		 */
 		if (!$p_forceNew && get_transient(self::BACKOFF_KEY)) {
-			return $cached !== null ? $cached : array('categories' => array(), 'tlddetail' => array());
+			return self::_ServeCached($cached, $age);
 		}
 
 		$response = $this->Whmcs_API_Call('GetTLDPricing');
@@ -183,11 +183,7 @@ class Domains extends whmcsAPI
 
 			set_transient(self::BACKOFF_KEY, 1, self::FAILURE_BACKOFF);
 
-			if ($cached !== null) {
-				return $cached;
-			}
-
-			return array('categories' => array(), 'tlddetail' => array());
+			return self::_ServeCached($cached, $age);
 		}
 
 		$parsed = $this->_ParsePricing($response->pricing);
@@ -196,7 +192,7 @@ class Domains extends whmcsAPI
 		// is almost always a configuration slip rather than a real catalogue
 		// change, so the existing cache wins.
 		if (empty($parsed['tlddetail']) && $cached !== null) {
-			return $cached;
+			return self::_ServeCached($cached, $age);
 		}
 
 		// A good answer clears any pending back-off.
@@ -212,6 +208,110 @@ class Domains extends whmcsAPI
 	}
 
 	/**
+	 * Collect every registration length WHMCS quotes for one extension.
+	 *
+	 * Returns [years => ['register' => float, 'renew' => float]], ordered by
+	 * length. Zero and empty amounts are dropped: WHMCS uses them to mean "not
+	 * offered", and a zero would otherwise reach a page as a free domain.
+	 *
+	 * @since 1.1.0
+	 * @param object $p_details One entry of the GetTLDPricing payload
+	 * @return array
+	 */
+	private static function _ReadPeriods($p_details)
+	{
+		$periods = array();
+
+		foreach (array('register', 'renew') as $kind) {
+
+			if (!isset($p_details->$kind)) {
+				continue;
+			}
+
+			foreach ((array) $p_details->$kind as $years => $amount) {
+
+				if (!ctype_digit((string) $years) || $amount === '' || $amount === null) {
+					continue;
+				}
+
+				$amount = (float) $amount;
+
+				if ($amount <= 0) {
+					continue;
+				}
+
+				$periods[(int) $years][$kind] = $amount;
+			}
+		}
+
+		ksort($periods);
+
+		return $periods;
+	}
+
+	/**
+	 * Price for one extension over a given number of years.
+	 *
+	 * When the requested length is not sold, this falls back to one year — and
+	 * says so through the returned 'years', so the caller always labels the
+	 * figure it actually shows.
+	 *
+	 * @since 1.1.0
+	 * @param string $p_tld Extension, with or without its leading dot
+	 * @param int $p_years Requested registration length
+	 * @return array Empty when nothing can be quoted
+	 */
+	public function Get_TLD_Pricing($p_tld, $p_years = 1)
+	{
+		$detail = $this->Get_TLD_Detail($p_tld);
+
+		if (empty($detail['periods'])) {
+			return array();
+		}
+
+		$years = max(1, (int) $p_years);
+
+		if (!isset($detail['periods'][$years]['register'])) {
+			$years = 1;
+		}
+
+		if (!isset($detail['periods'][$years]['register'])) {
+			return array();
+		}
+
+		$period = $detail['periods'][$years];
+
+		return array(
+			'years'    => $years,
+			'register' => $period['register'],
+			'renew'    => isset($period['renew']) ? $period['renew'] : null,
+			'offered'  => array_keys($detail['periods']),
+		);
+	}
+
+	/**
+	 * Hand back cached data, unless it has gone past the staleness limit.
+	 *
+	 * Callers used to test Is_Cache_Stale() themselves before asking for data.
+	 * That read "never cached" as "too old to show" and returned nothing — so a
+	 * fresh install rendered blank and never triggered the first fetch. The
+	 * decision belongs here, where the age is actually known.
+	 *
+	 * @since 1.0.2
+	 * @param array|null $p_cached Previously cached payload
+	 * @param float|null $p_age Age of that payload in seconds
+	 * @return array Empty structure when there is nothing safe to show
+	 */
+	private static function _ServeCached($p_cached, $p_age)
+	{
+		if ($p_cached === null || $p_age === null || $p_age > self::CACHE_MAX_AGE) {
+			return array('categories' => array(), 'tlddetail' => array());
+		}
+
+		return $p_cached;
+	}
+
+	/**
 	 * Turn the WHMCS pricing payload into the array the shortcodes expect.
 	 *
 	 * @since 1.0.0
@@ -224,14 +324,28 @@ class Domains extends whmcsAPI
 
 		foreach ($p_pricing as $tld => $details) {
 
-			if (!isset($details->register->{'1'}) || !($details->register->{'1'} > 0)) {
+			/**
+			 * WHMCS quotes every registration length it sells, keyed by number
+			 * of years. The previous parser read year one and discarded the
+			 * rest, so a multi-year discount never reached the page.
+			 */
+			$periods = self::_ReadPeriods($details);
+
+			if (!isset($periods[1]['register'])) {
 				continue;
 			}
 
 			$key = ltrim(strtolower((string) $tld), '.');
 
-			$register = (float) $details->register->{'1'};
-			$renew = isset($details->renew->{'1'}) ? (float) $details->renew->{'1'} : $register;
+			$register = $periods[1]['register'];
+
+			/**
+			 * Only record a renewal price when WHMCS actually supplied one.
+			 * Falling back to the registration price used to make every
+			 * extension look like it renewed at the same rate — on a commercial
+			 * page that is not a harmless default, it is a claim about money.
+			 */
+			$renew = isset($periods[1]['renew']) ? $periods[1]['renew'] : null;
 			/**
 			 * Sanitise on the way in rather than at every display site. WHMCS is a
 			 * separate system with its own operators; treating its output as
@@ -248,14 +362,20 @@ class Domains extends whmcsAPI
 
 			$entry = array(
 				'reg_price'  => $register,
-				'renew'      => $renew,
 				'categories' => $categories,
 				'flag'       => $group,
 				'promo'      => 0,
+				'periods'    => $periods,
 			);
 
+			// Absent renewal stays absent: consumers test isset() and render
+			// nothing rather than repeating the registration price.
+			if ($renew !== null) {
+				$entry['renew'] = $renew;
+			}
+
 			// First year cheaper than renewal means a promotional rate.
-			if ($register < $renew) {
+			if ($renew !== null && $register < $renew) {
 
 				$entry['promo'] = 1;
 				$entry['discount_amount'] = $renew - $register;

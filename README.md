@@ -4,7 +4,7 @@ Tags: whmcs, api
 Requires at least: 5.8
 Tested up to: 5.8
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -58,6 +58,9 @@ Block settings:
 - **Extension:** the TLD to price. Leave it empty to use the page slug — on a
   post type whose slug is the extension itself, this keeps the price and the page
   in step with no manual entry.
+- **Registration length:** 1, 2, 3, 5 or 10 years. A length WHMCS does not sell
+  for that extension falls back to one year, and the wording follows the figure
+  actually shown.
 - **Label:** optional heading shown above the price.
 - **Show renewal price** (default on): on new gTLDs the first year is often
   promotional while renewal is markedly higher.
@@ -111,9 +114,10 @@ Return the first year registration price of a domain extension.
 
 ```
 [whmcs_domainsprice tld="com"]
+[whmcs_domainsprice tld="ca" years="3"]
 ```
 
-Attributes: **tld**, **bypasscache**
+Attributes: **tld**, **years** (default 1), **bypasscache**
 
 ### whmcs_domainsrenew
 
@@ -122,9 +126,10 @@ registration price on new gTLDs, where the two often differ substantially.
 
 ```
 [whmcs_domainsrenew tld="com"]
+[whmcs_domainsrenew tld="ca" years="3"]
 ```
 
-Attributes: **tld**, **bypasscache**
+Attributes: **tld**, **years** (default 1), **bypasscache**
 
 ### whmcs_domainspromo
 

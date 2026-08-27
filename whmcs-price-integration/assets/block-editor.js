@@ -55,6 +55,25 @@
 						}
 					}),
 
+					el(components.SelectControl, {
+						label: __('Registration length', 'whmcs-pi'),
+						help: __(
+							'Lengths WHMCS does not sell for this extension fall back to one year, and the wording follows what is shown.',
+							'whmcs-pi'
+						),
+						value: String(attributes.years || 1),
+						options: [
+							{ label: __('1 year', 'whmcs-pi'), value: '1' },
+							{ label: __('2 years', 'whmcs-pi'), value: '2' },
+							{ label: __('3 years', 'whmcs-pi'), value: '3' },
+							{ label: __('5 years', 'whmcs-pi'), value: '5' },
+							{ label: __('10 years', 'whmcs-pi'), value: '10' }
+						],
+						onChange: function (value) {
+							setAttributes({ years: parseInt(value, 10) || 1 });
+						}
+					}),
+
 					el(components.TextControl, {
 						label: __('Label', 'whmcs-pi'),
 						help: __('Optional heading shown above the price.', 'whmcs-pi'),

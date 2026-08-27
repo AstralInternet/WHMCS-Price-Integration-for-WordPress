@@ -23,123 +23,320 @@ msgstr ""
 "X-Poedit-SearchPath-7: admin/whmcs-pi_admin-display.php\n"
 "X-Poedit-SearchPath-8: whmcs-price-integration.php\n"
 
-#: admin/whmcs-pi_admin-display.php:47
+msgid "1 year"
+msgstr "1 an"
+
+msgid "10 years"
+msgstr "10 ans"
+
+msgid "2 years"
+msgstr "2 ans"
+
+msgid "3 years"
+msgstr "3 ans"
+
+msgid "5 years"
+msgstr "5 ans"
+
+msgid "A .%s domain"
+msgstr "Un domaine .%s"
+
 msgid "API Configuration updated"
 msgstr "Configuration de l'API mise à jour"
 
-#: admin/whmcs-pi_admin-display.php:211
-msgid "WHMCS Price Integration"
-msgstr "Intégration des prix WHMCS"
+msgid "API configuration"
+msgstr "Configuration de l'API"
 
-#: admin/whmcs-pi_admin-display.php:234
-msgid "Module Configuration"
-msgstr "Configuration du module"
+msgid "API configuration updated."
+msgstr "Configuration de l'API mise à jour."
 
-#: admin/whmcs-pi_admin-display.php:235
-msgid "Enter your WHMCS API information below"
-msgstr "Entrez vos informations d'API WHMCS ci-dessous"
+msgid "API credentials"
+msgstr "Identifiants d'API"
 
-#: admin/whmcs-pi_admin-display.php:273
-msgid "Test the API connection"
-msgstr "Tester la connexion API"
+msgid "API identifier"
+msgstr "Identifiant d'API"
 
-#: lib/domains_shortcode.php:49 lib/domains_shortcode.php:89
-#: lib/domains_shortcode.php:129 lib/domains_shortcode.php:169
-msgid "TLD cannot be empty."
-msgstr "Le TLD ne peut pas être vide."
+msgid "API identifier or secret is missing."
+msgstr "L'identifiant ou le secret d'API est manquant."
 
-#: lib/domains_shortcode.php:406
-msgid "Was"
-msgstr "Était"
+msgid "API secret"
+msgstr "Secret d'API"
 
-#: lib/domains_shortcode.php:419
-msgid "Search domain TLD"
-msgstr "Chercher avec ce domaine"
+msgid "Access key (optional)"
+msgstr "Clé d'accès (facultative)"
 
-#: lib/domains_shortcode.php:358
-msgid "all"
-msgstr "Tous"
-
-#: lib/domains_shortcode.php:358
-msgid "Popular"
-msgstr "Populaire"
-
-#: lib/domains_shortcode.php:358
-msgid "Geographic"
-msgstr "Géographique"
-
-#: lib/domains_shortcode.php:358
-msgid "hot"
-msgstr "Prisé"
-
-#: lib/domains_shortcode.php:358
-msgid "Other"
-msgstr "Autre"
-
-#: lib/domains_shortcode.php:358
-msgid "Education"
-msgstr "Éducation"
-
-#: lib/domains_shortcode.php:358
 msgid "Arts and Entertainment"
 msgstr "Arts and Divertissements"
 
-#: lib/domains_shortcode.php:358
 msgid "Business"
 msgstr "Entreprise"
 
-#: lib/domains_shortcode.php:358
-msgid "Food and Drink"
-msgstr "Nourriture et Boissons"
+msgid "Cache refreshed — %d extensions stored."
+msgstr "Cache rafraîchi — %d extensions enregistrées."
 
-#: lib/domains_shortcode.php:358
-msgid "Shopping"
-msgstr "Magasinage"
+msgid "Clear credentials"
+msgstr "Effacer les identifiants"
 
-#: lib/domains_shortcode.php:358
-msgid "Novelty"
-msgstr "Nouveautés"
+msgid "Clear the stored API credentials?"
+msgstr "Effacer les identifiants d'API enregistrés ?"
 
-#: lib/domains_shortcode.php:358
-msgid "Services"
-msgstr "Services"
+msgid "Client area URL"
+msgstr "URL de l'espace client"
 
-#: lib/domains_shortcode.php:358
-msgid "Real Estate"
-msgstr "Immobilier"
+msgid "Client area root. \"/includes/api.php\" is appended automatically."
+msgstr "Racine de l'espace client. « /includes/api.php » est ajouté automatiquement."
 
-#: lib/domains_shortcode.php:358
-msgid "Leisure and Recreation"
-msgstr "Loisirs"
+msgid "Connection failed for an unknown reason."
+msgstr "Échec de la connexion, cause inconnue."
 
-#: lib/domains_shortcode.php:358
-msgid "Technology"
-msgstr "Technologies"
+msgid "Connection failed: %s"
+msgstr "Échec de la connexion : %s"
 
-#: lib/domains_shortcode.php:358
-msgid "Money and Finance"
-msgstr "Argent et Finances"
+msgid "Connection successful — WHMCS returned %d extensions."
+msgstr "Connexion réussie — WHMCS a retourné %d extensions."
 
-#: lib/domains_shortcode.php:358
-msgid "Sports"
-msgstr "Sports"
+msgid "Could not reach WHMCS: %s"
+msgstr "WHMCS injoignable : %s"
 
-#: lib/main.class.php:96
-msgid "WHMCS Price Intergration"
-msgstr "Intégration des prix WHMCS"
+msgid "Create dedicated API credentials in WHMCS under Configuration > System Settings > API Credentials. Restrict them by IP address and grant only the pricing related roles."
+msgstr "Créez des identifiants d'API dédiés dans WHMCS sous Configuration > System Settings > API Credentials. Restreignez-les par adresse IP et n'accordez que les rôles liés aux tarifs."
 
-#: lib/main.class.php:177
-msgid "en-CA"
-msgstr "fr-CA"
+msgid "Education"
+msgstr "Éducation"
 
-#: lib/products_shortcode.php:242
+msgid "Enter your WHMCS API information below"
+msgstr "Entrez vos informations d'API WHMCS ci-dessous"
+
 msgid "Error while making the API call : "
 msgstr "Erreur lors de l'appel de l'API : "
 
-#: lib/products_shortcode.php:270
+msgid "Extension"
+msgstr "Extension"
+
+msgid "Food and Drink"
+msgstr "Nourriture et Boissons"
+
+msgid "Geographic"
+msgstr "Géographique"
+
 msgid "Invalid period (<b>"
 msgstr "Période invalide (<b>"
 
-#: lib/products_shortcode.php:293
 msgid "Invalid product ID provided (<b>"
 msgstr "ID de produit fourni non valide (<b>"
+
+msgid "Label"
+msgstr "Libellé"
+
+msgid "Leave empty to use the page slug. On extension pages that keeps the price and the page in step automatically."
+msgstr "Laissez vide pour utiliser l'identifiant de la page. Sur une fiche d'extension, le prix et la page restent ainsi accordés sans saisie."
+
+msgid "Leisure and Recreation"
+msgstr "Loisirs"
+
+msgid "Lengths WHMCS does not sell for this extension fall back to one year, and the wording follows what is shown."
+msgstr "Une durée que WHMCS ne vend pas pour cette extension retombe sur un an, et le libellé suit ce qui est réellement affiché."
+
+msgid "Maintenance"
+msgstr "Maintenance"
+
+msgid "Missing"
+msgstr "Manquants"
+
+msgid "Module Configuration"
+msgstr "Configuration du module"
+
+msgid "Money and Finance"
+msgstr "Argent et Finances"
+
+msgid "No key"
+msgstr "Aucune clé"
+
+msgid "No price available yet. Check the plugin settings, or refresh the cache."
+msgstr "Aucun prix disponible pour l'instant. Vérifiez la configuration de l'extension ou rafraîchissez le cache."
+
+msgid "Novelty"
+msgstr "Nouveautés"
+
+msgid "Optional heading shown above the price."
+msgstr "Titre facultatif affiché au-dessus du prix."
+
+msgid "Other"
+msgstr "Autre"
+
+msgid "Popular"
+msgstr "Populaire"
+
+msgid "Price settings"
+msgstr "Réglages du prix"
+
+msgid "Pricing is temporarily unavailable."
+msgstr "Tarifs temporairement indisponibles."
+
+msgid "Real Estate"
+msgstr "Immobilier"
+
+msgid "Recommended: on new gTLDs the first year is often promotional."
+msgstr "Recommandé : sur les nouveaux gTLD, la première année est souvent promotionnelle."
+
+msgid "Refresh cache now"
+msgstr "Rafraîchir le cache maintenant"
+
+msgid "Refresh failed. The previous cache was kept."
+msgstr "Échec du rafraîchissement. Le cache précédent a été conservé."
+
+msgid "Registration length"
+msgstr "Durée d'enregistrement"
+
+msgid "Renewal:"
+msgstr "Renouvellement :"
+
+msgid "Renewal: %s"
+msgstr "Renouvellement : %s"
+
+msgid "Renews at the same price"
+msgstr "Renouvellement au même prix"
+
+msgid "Save %1$d%% over %2$d years"
+msgstr "Économisez %1$d %% sur %2$d ans"
+
+msgid "Save %d%% the first year"
+msgstr "Économisez %d %% la première année"
+
+msgid "Save configuration"
+msgstr "Enregistrer la configuration"
+
+msgid "Search domain TLD"
+msgstr "Chercher avec ce domaine"
+
+msgid "Services"
+msgstr "Services"
+
+msgid "Set"
+msgstr "Configurés"
+
+msgid "Shopping"
+msgstr "Magasinage"
+
+msgid "Show discount badge"
+msgstr "Afficher le badge de rabais"
+
+msgid "Show renewal price"
+msgstr "Afficher le prix de renouvellement"
+
+msgid "Shows the live registration and renewal price for a domain extension."
+msgstr "Affiche le prix d'enregistrement et de renouvellement à jour d'une extension de domaine."
+
+msgid "Sports"
+msgstr "Sports"
+
+msgid "Status"
+msgstr "État"
+
+msgid "Stored credentials are never sent back to the browser. Leave a field blank to keep its current value."
+msgstr "Les identifiants enregistrés ne sont jamais renvoyés au navigateur. Laissez un champ vide pour conserver sa valeur actuelle."
+
+msgid "Stored credentials cleared."
+msgstr "Identifiants effacés."
+
+msgid "TLD cannot be empty."
+msgstr "Le TLD ne peut pas être vide."
+
+msgid "Technology"
+msgstr "Technologies"
+
+msgid "Test API connection"
+msgstr "Tester la connexion à l'API"
+
+msgid "Test the API connection"
+msgstr "Tester la connexion API"
+
+msgid "The WHMCS API URL is empty or invalid."
+msgstr "L'URL de l'API WHMCS est vide ou invalide."
+
+msgid "The WHMCS API URL must use https://."
+msgstr "L'URL de l'API WHMCS doit utiliser https://."
+
+msgid "The WHMCS URL must start with https:// — the API credentials travel in the request body."
+msgstr "L'URL de WHMCS doit commencer par https:// — les identifiants d'API circulent dans le corps de la requête."
+
+msgid "Uses the page slug"
+msgstr "Utilise l'identifiant de la page"
+
+msgid "WHMCS API error: %s"
+msgstr "Erreur de l'API WHMCS : %s"
+
+msgid "WHMCS Price Integration"
+msgstr "Intégration des prix WHMCS"
+
+msgid "WHMCS Price Intergration"
+msgstr "Intégration des prix WHMCS"
+
+msgid "WHMCS URL"
+msgstr "URL de WHMCS"
+
+msgid "WHMCS answered with HTTP %d."
+msgstr "WHMCS a répondu par un code HTTP %d."
+
+msgid "WHMCS did not return valid JSON. Check the API URL."
+msgstr "WHMCS n'a pas renvoyé de JSON valide. Vérifiez l'URL de l'API."
+
+msgid "WHMCS domain price"
+msgstr "Prix de domaine WHMCS"
+
+msgid "WHMCS refused the request."
+msgstr "WHMCS a refusé la requête."
+
+msgid "WHMCS refused this server's IP address. Add it to the API credential's allowed IPs."
+msgstr "WHMCS a refusé l'adresse IP de ce serveur. Ajoutez-la aux adresses autorisées de l'identifiant d'API."
+
+msgid "Was"
+msgstr "Était"
+
+msgid "You do not have permission to access this page."
+msgstr "Vous n'avez pas l'autorisation d'accéder à cette page."
+
+msgid "all"
+msgstr "Tous"
+
+msgid "domain"
+msgstr "domaine"
+
+msgid "en-CA"
+msgstr "fr-CA"
+
+msgid "extensions cached"
+msgstr "extensions en cache"
+
+msgid "for %d years"
+msgstr "pour %d ans"
+
+msgid "for the first year"
+msgstr "la première année"
+
+msgid "hot"
+msgstr "Prisé"
+
+msgid "never"
+msgstr "jamais"
+
+msgid "not scheduled"
+msgstr "non planifié"
+
+msgid "page slug"
+msgstr "identifiant de la page"
+
+msgid "price"
+msgstr "prix"
+
+msgid "since last refresh"
+msgstr "depuis le dernier rafraîchissement"
+
+msgid "unchanged"
+msgstr "inchangé"
+
+msgid "until next refresh"
+msgstr "avant le prochain rafraîchissement"
+
+msgid "wp-config.php has no usable salt — credentials cannot be stored safely."
+msgstr "wp-config.php ne contient aucun sel utilisable — les identifiants ne peuvent pas être enregistrés en sécurité."

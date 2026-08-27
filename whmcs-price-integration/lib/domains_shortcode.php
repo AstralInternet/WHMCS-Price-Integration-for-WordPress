@@ -28,7 +28,9 @@
  * [whmcs_domainspromo tld="com"]      discount, as a percentage
  * [whmcs_domainsflag tld="com"]       WHMCS group flag
  *
- * All of them accept bypasscache="true" to skip the daily cache.
+ * [whmcs_domainsprice] and [whmcs_domainsrenew] also accept years="3" to quote
+ * a multi-year registration. All of them accept bypasscache="true" to skip the
+ * daily cache.
  */
 // If this file is called directly, abort.
 defined('ABSPATH') or die('No script kiddies please!');
@@ -46,6 +48,7 @@ function whmcs_domains_parse_atts($p_atts)
 {
     $attribute = shortcode_atts(array(
         'tld' => '',
+        'years' => 1,
         'bypasscache' => false
     ), $p_atts);
 
@@ -65,6 +68,8 @@ function whmcs_domains_parse_atts($p_atts)
         $attribute['bypasscache'], FILTER_VALIDATE_BOOLEAN
     );
 
+    $attribute['years'] = max(1, (int) $attribute['years']);
+
     return $attribute;
 }
 
@@ -79,12 +84,30 @@ function whmcs_domains_fetch($p_attribute)
 {
     $domainObj = WHMCS_PI_Main::load_domain_class();
 
-    // A week-old price is worse than no price on a commercial page.
-    if ($domainObj->Is_Cache_Stale() && !$p_attribute['bypasscache']) {
-        return array();
+    /**
+     * The staleness rule lives inside the class now: a week-old price is worse
+     * than no price, but "never fetched" is not the same as "too old" and must
+     * still be allowed to populate.
+     */
+    return $domainObj->Get_TLD_Detail($p_attribute['tld'], $p_attribute['bypasscache']);
+}
+
+/**
+ * Fetch the price of one TLD over the requested registration length.
+ *
+ * @since 1.1.0
+ * @param array $p_attribute Normalised attributes
+ * @return array Empty when nothing can be quoted
+ */
+function whmcs_domains_fetch_pricing($p_attribute)
+{
+    $domainObj = WHMCS_PI_Main::load_domain_class();
+
+    if ($p_attribute['bypasscache']) {
+        $domainObj->Get_Whmcs_TLD_List(true);
     }
 
-    return $domainObj->Get_TLD_Detail($p_attribute['tld'], $p_attribute['bypasscache']);
+    return $domainObj->Get_TLD_Pricing($p_attribute['tld'], $p_attribute['years']);
 }
 
 /**
@@ -160,13 +183,13 @@ function whmcs_domainsprice_func($p_atts)
         return $attribute;
     }
 
-    $tldDetail = whmcs_domains_fetch($attribute);
+    $pricing = whmcs_domains_fetch_pricing($attribute);
 
-    if (!isset($tldDetail['reg_price'])) {
+    if (empty($pricing)) {
         return '';
     }
 
-    return esc_html(WHMCS_PI_Main::format_currency($tldDetail['reg_price']));
+    return esc_html(WHMCS_PI_Main::format_currency($pricing['register']));
 }
 
 /**
@@ -195,13 +218,13 @@ function whmcs_domainsrenew_func($p_atts)
         return $attribute;
     }
 
-    $tldDetail = whmcs_domains_fetch($attribute);
+    $pricing = whmcs_domains_fetch_pricing($attribute);
 
-    if (!isset($tldDetail['renew'])) {
+    if (empty($pricing) || $pricing['renew'] === null) {
         return '';
     }
 
-    return esc_html(WHMCS_PI_Main::format_currency($tldDetail['renew']));
+    return esc_html(WHMCS_PI_Main::format_currency($pricing['renew']));
 }
 
 /**
@@ -288,11 +311,6 @@ function whmcs_domainsdisplayall_func($p_atts)
 
     // Initiate the product class
     $domainObj = WHMCS_PI_Main::load_domain_class();
-
-    // The seven day staleness rule applies to the grouped view as well.
-    if ($domainObj->Is_Cache_Stale() && !$attribute['bypasscache']) {
-        return '';
-    }
 
     // Fetch the tld Information
     $allTldDetail = $domainObj->Get_Whmcs_TLD_List($attribute['bypasscache']);

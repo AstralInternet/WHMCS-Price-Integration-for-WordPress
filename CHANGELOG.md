@@ -2,6 +2,105 @@
 
 All notable changes to WHMCS Price Integration for WordPress.
 
+## 1.1.1
+
+The saving was announced as "the first year" whatever length was on display. Under a three year price that described a different offer from the one shown. The wording now follows the length: "Save 33% over 3 years".
+
+---
+
+## 1.1.0
+
+### Multi-year pricing
+
+WHMCS quotes every registration length it sells — `{"1": …, "2": …, "3": …}` —
+and the plugin read only the first. A three year discount existed in the API
+response and never reached the page; it was visible only at checkout.
+
+Every length is now kept in the cache. The block gains a **Registration length**
+selector (1, 2, 3, 5 or 10 years), and both `[whmcs_domainsprice]` and
+`[whmcs_domainsrenew]` accept `years="3"`.
+
+A length WHMCS does not sell for a given extension falls back to one year — and
+**the wording follows the figure actually shown**, never the one requested. A
+price and its period label therefore cannot contradict each other.
+
+### Identical renewal is information, not repetition
+
+When the renewal price matched the registration price, the block printed the
+same figure twice. That reads as redundancy, while the fact itself is
+reassuring.
+
+The block now renders **"Renews at the same price"** in that case, and the
+amount only when the two differ — so the contrast stands out on extensions that
+genuinely renew higher.
+
+### Translations
+
+Ten further strings in `fr_CA` and `fr_FR` — lengths, the selector, the new
+renewal wording. Catalogues now hold 106 entries.
+
+The cache is purged on upgrade: the stored structure now carries the per-length
+prices, which the previous one did not.
+
+---
+
+## 1.0.3
+
+Two findings from verifying a live installation.
+
+### Renewal price is no longer guessed
+
+When WHMCS supplied no renewal price, the code silently fell back to the
+registration price. The block therefore rendered "Renewal: X" with exactly the
+first year figure, on every extension — that is a claim about money, not a
+harmless default.
+
+An absent renewal now stays absent: the block and `[whmcs_domainsrenew]` render
+nothing rather than repeating the registration price. A discount is only
+computed when both figures are genuinely known.
+
+The cache is purged on version upgrade, otherwise the fallback values already
+stored would have masked the fix until the next scheduled refresh.
+
+### French translations
+
+Public output rendered in English on a French language site: none of the strings
+added since 1.0.0 existed in any catalogue. **65 strings** translated and added
+to `fr_CA` and `fr_FR`, with the `.mo` catalogues recompiled. The 2021
+translations are preserved as they were.
+
+The block, the editor panel, the settings screen and the transport messages are
+now translated.
+
+---
+
+## 1.0.2
+
+Fixes a defect introduced in 1.0.1 and caught on the first real install: **a
+fresh installation displayed no prices at all.**
+
+`Is_Cache_Stale()` treated "never populated" as "too old to display", and both
+the shortcodes and the block tested that condition *before* calling the API. An
+empty cache therefore read as a stale one: nothing rendered, and nothing
+triggered the initial fetch except the scheduled event, an hour after
+activation.
+
+The staleness guard now lives inside `Get_Whmcs_TLD_List()`, the only place that
+actually knows the cache age. The seven day rule still applies to data that
+exists but has gone stale; an absent cache now triggers a first fetch, itself
+protected by the fifteen minute back-off.
+
+Workaround on 1.0.1: the **Refresh cache now** button forces the fetch and
+unblocks rendering.
+
+### Other
+
+- The block declared its title, category and icon only on the JavaScript side.
+  They are now passed to `register_block_type()` as well, so the REST API and
+  the inserter report them correctly.
+
+---
+
 ## 1.0.1
 
 Security and robustness pass, following a full audit of the boundary between

@@ -47,9 +47,15 @@ function whmcs_pi_register_block()
 
     register_block_type('whmcs-pi/domain-price', array(
         'api_version'     => 2,
+        'title'           => __('WHMCS domain price', 'whmcs-pi'),
+        'description'     => __('Shows the live registration and renewal price for a domain extension.', 'whmcs-pi'),
+        'category'        => 'widgets',
+        'icon'            => 'tag',
+        'keywords'        => array(__('price', 'whmcs-pi'), __('domain', 'whmcs-pi'), 'whmcs'),
         'editor_script'   => 'whmcs-pi-block',
         'attributes'      => array(
             'tld'       => array('type' => 'string', 'default' => ''),
+            'years'     => array('type' => 'number', 'default' => 1),
             'showRenew' => array('type' => 'boolean', 'default' => true),
             'showPromo' => array('type' => 'boolean', 'default' => true),
             'label'     => array('type' => 'string', 'default' => ''),
@@ -63,9 +69,9 @@ add_action('init', 'whmcs_pi_register_block');
 /**
  * Resolve which TLD a block instance refers to.
  *
- * When the attribute is left empty the post slug is used. On the
- * post type whose slug is the extension itself, the price can never drift
- * away from the page it sits on.
+ * When the attribute is left empty the post slug is used. On a post type whose
+ * slug is the extension itself, the price can never drift away from the page it
+ * sits on.
  *
  * @since 1.0.0
  * @param array $p_attributes Block attributes
@@ -101,18 +107,27 @@ function whmcs_pi_render_domain_price($p_attributes)
         return '';
     }
 
+    // The staleness rule is enforced inside the class, which knows the age.
     $domains = WHMCS_PI_Main::load_domain_class();
 
-    // Nothing at all beats a price that may be a week out of date.
-    if ($domains->Is_Cache_Stale()) {
+    $years = isset($p_attributes['years']) ? (int) $p_attributes['years'] : 1;
+    $pricing = $domains->Get_TLD_Pricing($tld, $years);
+
+    if (empty($pricing)) {
         return '';
     }
 
-    $detail = $domains->Get_TLD_Detail($tld);
+    /**
+     * Always label the figure actually shown. When the requested length is not
+     * sold, Get_TLD_Pricing() quotes one year and says so — the wording below
+     * follows the returned length, never the requested one.
+     */
+    $years = $pricing['years'];
 
-    if (!isset($detail['reg_price'])) {
-        return '';
-    }
+    $period = $years === 1
+        ? __('for the first year', 'whmcs-pi')
+        /* translators: %d: number of years */
+        : sprintf(__('for %d years', 'whmcs-pi'), $years);
 
     $label = !empty($p_attributes['label'])
         ? $p_attributes['label']
@@ -123,29 +138,56 @@ function whmcs_pi_render_domain_price($p_attributes)
 
     $lines[] = sprintf(
         '<span class="whmcs-pi-price__amount">%s</span> <span class="whmcs-pi-price__period">%s</span>',
-        esc_html(WHMCS_PI_Main::format_currency($detail['reg_price'])),
-        esc_html__('for the first year', 'whmcs-pi')
+        esc_html(WHMCS_PI_Main::format_currency($pricing['register'])),
+        esc_html($period)
     );
 
-    // Showing renewal next to the first year is plain honesty on new gTLDs,
-    // where the introductory rate is often well below the renewal.
-    if (!empty($p_attributes['showRenew']) && isset($detail['renew'])) {
+    /**
+     * Showing renewal next to the first year is plain honesty on new gTLDs,
+     * where the introductory rate is often well below the renewal. When the two
+     * match, repeating the figure adds nothing — but saying so does, because
+     * "no increase at renewal" is the reassuring half of the same fact.
+     */
+    if (!empty($p_attributes['showRenew']) && $pricing['renew'] !== null) {
+
+        $identical = abs($pricing['renew'] - $pricing['register']) < 0.005;
+
         $lines[] = sprintf(
-            '<span class="whmcs-pi-price__renew">%s %s</span>',
-            esc_html__('Renewal:', 'whmcs-pi'),
-            esc_html(WHMCS_PI_Main::format_currency($detail['renew']))
+            '<span class="whmcs-pi-price__renew">%s</span>',
+            $identical
+                ? esc_html__('Renews at the same price', 'whmcs-pi')
+                : esc_html(sprintf(
+                    /* translators: %s: formatted renewal price */
+                    __('Renewal: %s', 'whmcs-pi'),
+                    WHMCS_PI_Main::format_currency($pricing['renew'])
+                ))
         );
     }
 
-    if (!empty($p_attributes['showPromo']) && !empty($detail['promo']) && isset($detail['discount_pourc'])) {
-        $lines[] = sprintf(
-            '<span class="whmcs-pi-price__promo">%s</span>',
-            sprintf(
+    if (!empty($p_attributes['showPromo']) && $pricing['renew'] !== null
+        && $pricing['register'] < $pricing['renew']) {
+
+        $discount = (int) round((1 - ($pricing['register'] / $pricing['renew'])) * 100, 0);
+
+        if ($discount > 0) {
+
+            /**
+             * The saving applies to the length being quoted. Saying "the first
+             * year" under a three year price would describe a different offer
+             * from the one shown.
+             */
+            $saving = $years === 1
                 /* translators: %d: discount percentage */
-                esc_html__('Save %d%% the first year', 'whmcs-pi'),
-                (int) $detail['discount_pourc']
-            )
-        );
+                ? sprintf(esc_html__('Save %d%% the first year', 'whmcs-pi'), $discount)
+                : sprintf(
+                    /* translators: 1: discount percentage, 2: number of years */
+                    esc_html__('Save %1$d%% over %2$d years', 'whmcs-pi'),
+                    $discount,
+                    $years
+                );
+
+            $lines[] = sprintf('<span class="whmcs-pi-price__promo">%s</span>', $saving);
+        }
     }
 
     $wrapper = function_exists('get_block_wrapper_attributes')
