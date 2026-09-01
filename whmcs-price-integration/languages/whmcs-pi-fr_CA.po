@@ -340,3 +340,211 @@ msgstr "avant le prochain rafraîchissement"
 
 msgid "wp-config.php has no usable salt — credentials cannot be stored safely."
 msgstr "wp-config.php ne contient aucun sel utilisable — les identifiants ne peuvent pas être enregistrés en sécurité."
+
+#: lib/product-block.php
+msgid "%1$s failed: %2$s"
+msgstr "Échec de %1$s : %2$s"
+
+#: lib/product-block.php
+msgid "%s failed for an unknown reason."
+msgstr "Échec de %s, pour une raison inconnue."
+
+#: lib/product-block.php
+msgid "/month"
+msgstr "/mois"
+
+#: lib/product-block.php
+msgid "/quarter"
+msgstr "/trimestre"
+
+#: lib/product-block.php
+msgid "/six months"
+msgstr "/six mois"
+
+#: lib/product-block.php
+msgid "/three years"
+msgstr "/trois ans"
+
+#: lib/product-block.php
+msgid "/two years"
+msgstr "/deux ans"
+
+#: lib/product-block.php
+msgid "/year"
+msgstr "/an"
+
+#: lib/product-block.php
+msgid "A cycle the product is not sold on renders nothing."
+msgstr "Un cycle sur lequel le produit n'est pas vendu n'affiche rien."
+
+#: lib/product-block.php
+msgid "Adds the cheapest selectable value of each option. On a product sold with a mandatory account count or disk allowance, the bare product price is not what a customer pays."
+msgstr "Ajoute la valeur la moins chère de chaque option. Sur un produit vendu avec un nombre de comptes ou un espace disque obligatoires, le prix nu du produit n'est pas ce que le client paie."
+
+#: lib/product-block.php
+msgid "Annually"
+msgstr "Annuel"
+
+#: lib/product-block.php
+msgid "Billing cycle"
+msgstr "Cycle de facturation"
+
+#: lib/product-block.php
+msgid "Comma separated option ids, for instance 911,913. Empty counts every option on the product."
+msgstr "Identifiants d'options séparés par des virgules, par exemple 911,913. Vide compte toutes les options du produit."
+
+#: lib/product-block.php
+msgid "Configurable options"
+msgstr "Options configurables"
+
+#: lib/product-block.php
+msgid "Count only these options"
+msgstr "Ne compter que ces options"
+
+#: lib/product-block.php
+msgid "Enter a WHMCS product id to see the price."
+msgstr "Saisissez un identifiant de produit WHMCS pour voir le prix."
+
+#: lib/product-block.php
+msgid "Every six months"
+msgstr "Tous les six mois"
+
+#: lib/product-block.php
+msgid "Every three years"
+msgstr "Tous les trois ans"
+
+#: lib/product-block.php
+msgid "Every two years"
+msgstr "Tous les deux ans"
+
+#: lib/product-block.php
+msgid "Falls back to the regular price when no promotion is configured."
+msgstr "Revient au prix normal si aucune promotion n'est configurée."
+
+#: lib/product-block.php
+msgid "GetProducts failed for pid %1$d. WHMCS reported: %2$s"
+msgstr "Échec de GetProducts pour le pid %1$d. WHMCS a répondu : %2$s"
+
+#: lib/product-block.php
+msgid "GetProducts: successful, %d products returned."
+msgstr "GetProducts : réussi, %d produits renvoyés."
+
+#: lib/product-block.php
+msgid "GetPromotions: successful."
+msgstr "GetPromotions : réussi."
+
+#: lib/product-block.php
+msgid "GetTLDPricing: successful, %d extensions returned."
+msgstr "GetTLDPricing : réussi, %d extensions renvoyées."
+
+#: lib/product-block.php
+msgid "Include the options floor"
+msgstr "Inclure le plancher des options"
+
+#: lib/product-block.php
+msgid "Monthly"
+msgstr "Mensuel"
+
+#: lib/product-block.php
+msgid "No configurable option was returned for this product."
+msgstr "Aucune option configurable n'a été renvoyée pour ce produit."
+
+#: lib/product-block.php
+msgid "No price available. Check the product id and the billing cycle, or the plugin settings."
+msgstr "Aucun prix disponible. Vérifiez l'identifiant du produit et le cycle de facturation, ou les réglages de l'extension."
+
+#: lib/product-block.php
+msgid "Off by default: the heading above the block usually says the same thing."
+msgstr "Désactivé par défaut : le titre au-dessus du bloc dit généralement la même chose."
+
+#: lib/product-block.php
+msgid "On an annual cycle, divides the price by twelve. This is how a yearly commitment is usually advertised."
+msgstr "Sur un cycle annuel, divise le prix par douze. C'est ainsi qu'un engagement d'un an s'annonce habituellement."
+
+#: lib/product-block.php
+msgid "Only for an option WHMCS reports no minimum for, as id:minimum pairs such as 913:10. A reported minimum always wins."
+msgstr "Uniquement pour une option dont WHMCS ne rapporte aucun minimum, sous forme de paires id:minimum comme 913:10. Un minimum rapporté l'emporte toujours."
+
+#: lib/product-block.php
+msgid "Prefix with \"from\""
+msgstr "Préfixer par « à partir de »"
+
+#: lib/product-block.php
+msgid "Product"
+msgstr "Produit"
+
+#: lib/product-block.php
+msgid "Product id"
+msgstr "Identifiant du produit"
+
+#: lib/product-block.php
+msgid "Quantity minimums"
+msgstr "Minimums de quantité"
+
+#: lib/product-block.php
+msgid "Quarterly"
+msgstr "Trimestriel"
+
+#: lib/product-block.php
+msgid "Show the billing period"
+msgstr "Afficher la période de facturation"
+
+#: lib/product-block.php
+msgid "Show the label above the price"
+msgstr "Afficher l'intitulé au-dessus du prix"
+
+#: lib/product-block.php
+msgid "Show the monthly equivalent"
+msgstr "Afficher l'équivalent mensuel"
+
+#: lib/product-block.php
+msgid "Shows the live price of a WHMCS product, options included."
+msgstr "Affiche le prix en direct d'un produit WHMCS, options comprises."
+
+#: lib/product-block.php
+msgid "The WHMCS product id, listed under Products/Services in the WHMCS admin."
+msgstr "L'identifiant du produit WHMCS, listé sous Products/Services dans l'administration WHMCS."
+
+#: lib/product-block.php
+msgid "Use the promotional price"
+msgstr "Utiliser le prix promotionnel"
+
+#: lib/product-block.php
+msgid "WHMCS answered but returned no product for this pid. Check the product id."
+msgstr "WHMCS a répondu, mais sans produit pour ce pid. Vérifiez l'identifiant du produit."
+
+#: lib/product-block.php
+msgid "WHMCS product price"
+msgstr "Prix de produit WHMCS"
+
+#: lib/product-block.php
+msgid "WHMCS refused the action %1$s. Add it to the API role used by these credentials, under Setup > Staff Management > API Roles. Reported: %2$s"
+msgstr "WHMCS a refusé l'action %1$s. Ajoutez-la au rôle API de ces identifiants, sous Setup > Staff Management > API Roles. Réponse : %2$s"
+
+#: lib/product-block.php
+msgid "Wording"
+msgstr "Libellés"
+
+#: lib/product-block.php
+msgid "Worth turning on when the options floor is included: what is quoted is the cheapest configuration, not the only one."
+msgstr "À activer quand le plancher des options est inclus : le prix annoncé est celui de la configuration la moins chère, pas la seule."
+
+#: lib/product-block.php
+msgid "all options"
+msgstr "toutes les options"
+
+#: lib/product-block.php
+msgid "from"
+msgstr "à partir de"
+
+#: lib/product-block.php
+msgid "no detail"
+msgstr "aucun détail"
+
+#: lib/product-block.php
+msgid "no detail recorded"
+msgstr "aucun détail consigné"
+
+#: lib/product-block.php
+msgid "product"
+msgstr "produit"

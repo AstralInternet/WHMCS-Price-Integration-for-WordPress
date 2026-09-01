@@ -96,7 +96,61 @@ if (isset($_POST['clearcreds'])
 }
 
 /**
+ * Turn one failed API call into wording an administrator can act on.
+ *
+ * The three answers that matter are not interchangeable: a refused IP, a
+ * refused action and an unreachable server each need a different fix, and
+ * WHMCS phrases only the first two itself.
+ *
+ * @since 1.3.0
+ * @param whmcsAPI $p_api    The client that made the call
+ * @param string   $p_action The API action that was attempted
+ * @return string Ready to display
+ */
+function whmcs_pi_admin_explain_failure($p_api, $p_action)
+{
+    $reason = $p_api->Get_Last_Error();
+
+    // WHMCS says "Invalid IP" when the calling server is not whitelisted.
+    // That is a different fix from a wrong secret, so name it plainly.
+    if (stripos($reason, 'Invalid IP') !== false) {
+        return __('WHMCS refused this server\'s IP address. Add it to the API credential\'s allowed IPs.', 'whmcs-pi');
+    }
+
+    /**
+     * A role missing the action arrives either as a JSON error naming the
+     * permission or as a bare HTTP 403, which carries no wording of its own.
+     */
+    if (stripos($reason, 'Invalid Permissions') !== false
+        || stripos($reason, 'HTTP 403') !== false
+        || stripos($reason, 'HTTP 401') !== false) {
+
+        return sprintf(
+            /* translators: 1: API action name, 2: reason returned by WHMCS */
+            __('WHMCS refused the action %1$s. Add it to the API role used by these credentials, under Setup > Staff Management > API Roles. Reported: %2$s', 'whmcs-pi'),
+            $p_action,
+            $reason !== '' ? $reason : __('no detail', 'whmcs-pi')
+        );
+    }
+
+    if ($reason !== '') {
+        return sprintf(
+            /* translators: 1: API action name, 2: error message returned by WHMCS */
+            __('%1$s failed: %2$s', 'whmcs-pi'),
+            $p_action,
+            $reason
+        );
+    }
+
+    /* translators: %s: API action name */
+    return sprintf(__('%s failed for an unknown reason.', 'whmcs-pi'), $p_action);
+}
+
+/**
  * Test if we can reach the WHMCS API with the provided credentials
+ *
+ * Domains and products are separate API actions and an API role can carry
+ * one without the other, so both are exercised rather than just one.
  *
  * @since 1.0.0
  */
@@ -111,39 +165,53 @@ if (isset($_POST['testconnection'])
         WHMCS_PI_Main::field_decrypt(get_option('whmcs-pi_api_accesskey'))
     );
 
+    $lines = array();
+    $failures = 0;
+
+    // --- domains ---------------------------------------------------------
     $test = $whmcsAPI->Whmcs_API_Call('GetTLDPricing');
 
     if (whmcsAPI::Is_Successful($test)) {
-
         $count = isset($test->pricing) ? count((array) $test->pricing) : 0;
-
-        $msg['txt'] = sprintf(
+        $lines[] = sprintf(
             /* translators: %d: number of TLDs returned by WHMCS */
-            __('Connection successful — WHMCS returned %d extensions.', 'whmcs-pi'),
+            __('GetTLDPricing: successful, %d extensions returned.', 'whmcs-pi'),
             $count
         );
-        $msg['type'] = 'success';
-
     } else {
-
-        $reason = $whmcsAPI->Get_Last_Error();
-
-        // WHMCS says "Invalid IP" when the calling server is not whitelisted.
-        // That is a different fix from a wrong secret, so name it plainly.
-        if (stripos($reason, 'Invalid IP') !== false) {
-            $msg['txt'] = __('WHMCS refused this server\'s IP address. Add it to the API credential\'s allowed IPs.', 'whmcs-pi');
-        } elseif ($reason !== '') {
-            $msg['txt'] = sprintf(
-                /* translators: %s: error message returned by WHMCS */
-                __('Connection failed: %s', 'whmcs-pi'),
-                $reason
-            );
-        } else {
-            $msg['txt'] = __('Connection failed for an unknown reason.', 'whmcs-pi');
-        }
-
-        $msg['type'] = 'error';
+        $failures++;
+        $lines[] = whmcs_pi_admin_explain_failure($whmcsAPI, 'GetTLDPricing');
     }
+
+    // --- products --------------------------------------------------------
+    $testProducts = $whmcsAPI->Whmcs_API_Call('GetProducts');
+
+    if (whmcsAPI::Is_Successful($testProducts)) {
+        $nb = isset($testProducts->products->product)
+            ? count((array) $testProducts->products->product)
+            : 0;
+        $lines[] = sprintf(
+            /* translators: %d: number of products returned by WHMCS */
+            __('GetProducts: successful, %d products returned.', 'whmcs-pi'),
+            $nb
+        );
+    } else {
+        $failures++;
+        $lines[] = whmcs_pi_admin_explain_failure($whmcsAPI, 'GetProducts');
+    }
+
+    // --- promotions, used by the product shortcode for promo prices ------
+    $testPromotions = $whmcsAPI->Whmcs_API_Call('GetPromotions');
+
+    if (whmcsAPI::Is_Successful($testPromotions)) {
+        $lines[] = __('GetPromotions: successful.', 'whmcs-pi');
+    } else {
+        $failures++;
+        $lines[] = whmcs_pi_admin_explain_failure($whmcsAPI, 'GetPromotions');
+    }
+
+    $msg['txt'] = implode(' | ', $lines);
+    $msg['type'] = $failures ? 'error' : 'success';
 }
 
 /**

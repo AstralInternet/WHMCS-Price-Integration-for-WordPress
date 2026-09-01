@@ -83,3 +83,15 @@
 		font-size: 2em;
 	}
 }
+
+/**
+ * "from" prefix, used when the amount is built on an options floor: the price
+ * shown is the cheapest configuration, not the only one. Set smaller and
+ * lighter than the amount so it reads as a qualifier, never as part of it.
+ */
+.whmcs-pi-price__from {
+	font-size: 0.62em;
+	font-weight: 400;
+	opacity: 0.75;
+	margin-right: 0.15em;
+}

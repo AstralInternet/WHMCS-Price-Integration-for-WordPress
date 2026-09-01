@@ -155,6 +155,214 @@
 			return null;
 		}
 	});
+
+	/**
+	 * WHMCS product price.
+	 *
+	 * Unlike the domain block there is no slug to fall back on: a product is
+	 * identified by its WHMCS id, which the author has to supply. The id is
+	 * listed under Products/Services in the WHMCS admin.
+	 *
+	 * @since 1.3.0
+	 */
+	blocks.registerBlockType('whmcs-pi/product-price', {
+		title: __('WHMCS product price', 'whmcs-pi'),
+		description: __(
+			'Shows the live price of a WHMCS product, options included.',
+			'whmcs-pi'
+		),
+		icon: 'cart',
+		category: 'widgets',
+		keywords: [__('price', 'whmcs-pi'), __('product', 'whmcs-pi'), 'whmcs'],
+
+		edit: function (props) {
+			var attributes = props.attributes;
+			var setAttributes = props.setAttributes;
+			var blockProps = useBlockProps ? useBlockProps() : {};
+
+			var controls = el(
+				InspectorControls,
+				{ key: 'inspector' },
+				el(
+					components.PanelBody,
+					{ title: __('Product', 'whmcs-pi'), initialOpen: true },
+
+					el(components.TextControl, {
+						label: __('Product id', 'whmcs-pi'),
+						help: __(
+							'The WHMCS product id, listed under Products/Services in the WHMCS admin.',
+							'whmcs-pi'
+						),
+						type: 'number',
+						value: attributes.pid ? String(attributes.pid) : '',
+						onChange: function (value) {
+							setAttributes({ pid: parseInt(value, 10) || 0 });
+						}
+					}),
+
+					el(components.SelectControl, {
+						label: __('Billing cycle', 'whmcs-pi'),
+						help: __(
+							'A cycle the product is not sold on renders nothing.',
+							'whmcs-pi'
+						),
+						value: attributes.period || 'monthly',
+						options: [
+							{ label: __('Monthly', 'whmcs-pi'), value: 'monthly' },
+							{ label: __('Quarterly', 'whmcs-pi'), value: 'quarterly' },
+							{ label: __('Every six months', 'whmcs-pi'), value: 'semiannually' },
+							{ label: __('Annually', 'whmcs-pi'), value: 'annually' },
+							{ label: __('Every two years', 'whmcs-pi'), value: 'biennially' },
+							{ label: __('Every three years', 'whmcs-pi'), value: 'triennially' }
+						],
+						onChange: function (value) {
+							setAttributes({ period: value });
+						}
+					}),
+
+					el(components.ToggleControl, {
+						label: __('Show the monthly equivalent', 'whmcs-pi'),
+						help: __(
+							'On an annual cycle, divides the price by twelve. This is how a yearly commitment is usually advertised.',
+							'whmcs-pi'
+						),
+						checked: !!attributes.showMonthly,
+						onChange: function (value) {
+							setAttributes({ showMonthly: value });
+						}
+					}),
+
+					el(components.ToggleControl, {
+						label: __('Use the promotional price', 'whmcs-pi'),
+						help: __(
+							'Falls back to the regular price when no promotion is configured.',
+							'whmcs-pi'
+						),
+						checked: !!attributes.promoPrice,
+						onChange: function (value) {
+							setAttributes({ promoPrice: value });
+						}
+					})
+				),
+
+				el(
+					components.PanelBody,
+					{ title: __('Configurable options', 'whmcs-pi'), initialOpen: false },
+
+					el(components.ToggleControl, {
+						label: __('Include the options floor', 'whmcs-pi'),
+						help: __(
+							'Adds the cheapest selectable value of each option. On a product sold with a mandatory account count or disk allowance, the bare product price is not what a customer pays.',
+							'whmcs-pi'
+						),
+						checked: !!attributes.withOptions,
+						onChange: function (value) {
+							setAttributes({ withOptions: value });
+						}
+					}),
+
+					el(components.TextControl, {
+						label: __('Count only these options', 'whmcs-pi'),
+						help: __(
+							'Comma separated option ids, for instance 911,913. Empty counts every option on the product.',
+							'whmcs-pi'
+						),
+						value: attributes.options,
+						placeholder: __('all options', 'whmcs-pi'),
+						onChange: function (value) {
+							setAttributes({ options: value });
+						}
+					}),
+
+					el(components.TextControl, {
+						label: __('Quantity minimums', 'whmcs-pi'),
+						help: __(
+							'Only for an option WHMCS reports no minimum for, as id:minimum pairs such as 913:10. A reported minimum always wins.',
+							'whmcs-pi'
+						),
+						value: attributes.optionsMin,
+						onChange: function (value) {
+							setAttributes({ optionsMin: value });
+						}
+					})
+				),
+
+				el(
+					components.PanelBody,
+					{ title: __('Wording', 'whmcs-pi'), initialOpen: false },
+
+					el(components.TextControl, {
+						label: __('Label', 'whmcs-pi'),
+						help: __('Optional heading shown above the price.', 'whmcs-pi'),
+						value: attributes.label,
+						onChange: function (value) {
+							setAttributes({ label: value });
+						}
+					}),
+
+					el(components.ToggleControl, {
+						label: __('Show the billing period', 'whmcs-pi'),
+						checked: !!attributes.showPeriod,
+						onChange: function (value) {
+							setAttributes({ showPeriod: value });
+						}
+					}),
+
+					el(components.ToggleControl, {
+						label: __('Prefix with "from"', 'whmcs-pi'),
+						help: __(
+							'Worth turning on when the options floor is included: what is quoted is the cheapest configuration, not the only one.',
+							'whmcs-pi'
+						),
+						checked: !!attributes.showFrom,
+						onChange: function (value) {
+							setAttributes({ showFrom: value });
+						}
+					})
+				)
+			);
+
+			var preview;
+
+			if (!attributes.pid) {
+				preview = el(
+					components.Placeholder,
+					{ icon: 'cart', label: __('WHMCS product price', 'whmcs-pi') },
+					__('Enter a WHMCS product id to see the price.', 'whmcs-pi')
+				);
+			} else if (serverSideRender) {
+				preview = el(serverSideRender, {
+					block: 'whmcs-pi/product-price',
+					attributes: attributes,
+					// An empty render means no trustworthy price, which is a
+					// legitimate outcome rather than an error.
+					EmptyResponsePlaceholder: function () {
+						return el(
+							components.Placeholder,
+							{ icon: 'cart', label: __('WHMCS product price', 'whmcs-pi') },
+							__(
+								'No price available. Check the product id and the billing cycle, or the plugin settings.',
+								'whmcs-pi'
+							)
+						);
+					}
+				});
+			} else {
+				preview = el(
+					components.Placeholder,
+					{ icon: 'cart', label: __('WHMCS product price', 'whmcs-pi') },
+					__('Product', 'whmcs-pi') + ' ' + attributes.pid
+				);
+			}
+
+			return el('div', blockProps, [controls, preview]);
+		},
+
+		// Rendered server side, for the same reason as the domain block.
+		save: function () {
+			return null;
+		}
+	});
 })(
 	window.wp.blocks,
 	window.wp.element,

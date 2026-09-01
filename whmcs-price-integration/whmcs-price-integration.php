@@ -11,7 +11,7 @@
  * Plugin Name: 		WHMCS Price Integration
  * Plugin URI:      	https://github.com/AstralInternet/WHMCS-Price-Integration-for-WordPress
  * Description:			Display WHMCS product and domain prices inside WordPress pages, through a Gutenberg block or a shortcode.
- * Version:         	1.2.0
+ * Version:         	1.3.0
  * Author:				Astral Internet inc.
  * Author URI:			https://www.astralinternet.com/fr
  * License:				GPL v3
@@ -37,7 +37,7 @@ define('WHMCS_PI_NAME', 'WHMCS Price Integration');
  *
  * @since 1.0.0
  */
-define('WHMCS_PI_VERSION', '1.2.0');
+define('WHMCS_PI_VERSION', '1.3.0');
 
 /**
  * Declare the main plugin file, if not already declared
@@ -68,8 +68,10 @@ require_once plugin_dir_path(__FILE__) . 'lib/whmcs-products.class.php';
 require_once plugin_dir_path(__FILE__) . 'lib/products_shortcode.php';
 require_once plugin_dir_path(__FILE__) . 'lib/domains_shortcode.php';
 
-// Load the Gutenberg block
+// Load the Gutenberg blocks. The product block reuses the pricing helpers
+// defined in products_shortcode.php, required above.
 require_once plugin_dir_path(__FILE__) . 'lib/block.php';
+require_once plugin_dir_path(__FILE__) . 'lib/product-block.php';
 
 // Set module local setting
 WHMCS_PI_Main::set_locale();

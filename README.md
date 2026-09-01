@@ -4,7 +4,7 @@ Tags: whmcs, api
 Requires at least: 5.8
 Tested up to: 5.8
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,31 @@ Block settings:
 The block is rendered server side, so no price is stored in the saved post
 content where it could go stale unnoticed.
 
+### WHMCS product price
+
+Renders the live price of a WHMCS product. Unlike the domain block there is no
+slug to fall back on: a product is identified by its WHMCS id, listed under
+*Products/Services* in the WHMCS admin.
+
+Block settings:
+
+- **Product id:** the WHMCS product id.
+- **Billing cycle:** monthly through triennially. A cycle the product is not
+  sold on renders nothing.
+- **Show the monthly equivalent** (default on): on an annual cycle, divides by
+  twelve — how a yearly commitment is normally advertised.
+- **Use the promotional price** (default on): falls back to the regular price
+  when no promotion is configured.
+- **Include the options floor** (default on): adds the cheapest selectable
+  value of each configurable option. On a product sold with a mandatory account
+  count or disk allowance, the bare product price is not what a customer pays.
+- **Count only these options** and **Quantity minimums**: the block equivalents
+  of the `options` and `optionsmin` shortcode attributes.
+- **Label**, **Show the billing period**, **Prefix with "from"**.
+
+Both blocks are rendered server side, so no price is stored in the saved post
+content where it could go stale unnoticed.
+
 ## Shortcodes
 
 Every shortcode accepts `bypasscache="true"` to skip the daily cache. The cache
@@ -107,6 +132,51 @@ Shortcode attributes:
 - **whmcssuffix** (default false): display the WHMCS-defined suffix on prices
 - **customprefix** (default empty): custom prefix, overrides the WHMCS prefix
 - **customsuffix** (default empty): custom suffix, overrides the WHMCS suffix
+- **withoptions** (default false): add the configurable options floor to the
+  returned price
+- **options** (default empty): comma separated configurable option ids to count,
+  e.g. `options="911,913"`. Empty counts every option on the product. Ignored
+  unless `withoptions` is true
+- **optionsonly** (default false): return the options floor alone, without the
+  product price
+- **debugoptions** (default false): print the option structure WHMCS returned.
+  Visible only to users who can manage options
+- **optionsmin** (default empty): quantity minimums as `id:minimum` pairs, e.g.
+  `optionsmin="913:10"`. A minimum reported by WHMCS always wins; this is only
+  a fallback for an option it does not report one for
+- **debugapi** (default false): when the call fails, print the reason WHMCS
+  gave instead of the neutral notice. Visible only to users who can manage
+  options
+
+A billing cycle the product is not sold on renders nothing: WHMCS marks those
+with -1.00, which is not an amount.
+
+#### Quoting a "from" price
+
+A product price on its own is rarely what a customer pays. When a product
+carries configurable options with a mandatory minimum — a number of accounts, a
+disk allowance, a database quota — the real floor is the product plus the
+cheapest selectable value of each option.
+
+`withoptions` adds that floor. For a dropdown or a radio it takes the least
+expensive value; for a quantity option it takes the minimum quantity times the
+unit price, since WHMCS will not accept an order below that minimum.
+
+```
+Reseller cPanel, from [whmcs_products pid="468" period="monthly"
+                       promoprice="true" withoptions="true"] /month
+```
+
+Option prices are quoted per billing cycle, so they are normalised to a monthly
+figure before being added, then scaled back by `showmonthlyprice` exactly like
+the product price. A cycle read as `annually` and one read as `monthly` yield
+the same monthly floor.
+
+An option WHMCS prices at nothing counts as nothing rather than raising an
+error: one missing price should not take the whole figure off the page. Run
+`debugoptions="true"` once as an administrator to see each option, the amount
+found, and which field it came from — the shape of `configoptions` varies
+between WHMCS versions, and the dump names the ids needed for `options`.
 
 ### whmcs_domainsprice
 

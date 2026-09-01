@@ -2,6 +2,85 @@
 
 All notable changes to WHMCS Price Integration for WordPress.
 
+## 1.3.0
+
+### Product prices now render
+
+`whmcs_products` never displayed a price: it reported "Pricing is temporarily
+unavailable" for every product. `GetProducts()` returns the processed array
+built by `_BuildPageInfoArray()` on success, and only a failure comes back as
+the raw API object — but the validation demanded an object, so a good response
+fell into the failure branch. An array is now the success case.
+
+A response that reports `success` with no product in it is reported separately:
+WHMCS answered, so the product id is what needs checking, not the connection.
+
+### A block for product prices
+
+`whmcs_products` covered the shortcode case, but a price on a sales page is
+laid out in the editor like everything else around it. **WHMCS product price**
+is the block equivalent: product id, billing cycle, options floor, "from"
+prefix and label, all from the inspector.
+
+The options floor is **on by default** here, unlike the shortcode. A block
+dropped on a sales page is quoting what a customer pays.
+
+Both blocks share one price resolver, so a figure cannot be assembled two
+different ways depending on how it was inserted.
+
+### Translations
+
+The product block would have printed "from" and "/month" on a French page:
+none of the strings added in this release existed in a catalogue. **52 strings**
+translated and added to `fr_CA` and `fr_FR`, catalogues recompiled. That count
+includes two from 1.2.0 that had been missed.
+
+### Quoting a price that includes mandatory options
+
+A product price alone is rarely what a customer pays. Where a product carries
+configurable options with a mandatory minimum — a number of accounts, a disk
+allowance, a database quota — `withoptions` adds the cheapest selectable value
+of each, and minimum quantity times unit price for a quantity option.
+
+`options` narrows the count to given option ids, `optionsonly` returns the
+floor by itself, and `optionsmin` supplies a minimum for an option WHMCS
+reports none for. A reported minimum always wins over a declared one.
+
+No extra API call was needed: `GetProducts` already returned `configoptions`
+and the product class already cached them.
+
+Option amounts are quoted per billing cycle, so each is normalised to a monthly
+figure before being summed, then scaled by `showmonthlyprice` like the product
+price.
+
+### Reading what WHMCS actually returned
+
+`debugoptions` prints every option, the amount found, the field it came from,
+and the field names received — the shape of `configoptions` varies between
+WHMCS versions. `debugapi` prints the reason a failed call gave instead of the
+neutral notice. Both are restricted to users who can manage options.
+
+### Connection test covers products
+
+The settings screen tested `GetTLDPricing` only, and announced a healthy
+connection while every product call failed. It now exercises `GetTLDPricing`,
+`GetProducts` and `GetPromotions` separately. A refused IP, a refused action
+and an unreachable server are named apart, since each needs a different fix.
+
+### Fixes
+
+- `$priceMultiplyer['triennially']` read 34 instead of 36, under-quoting a
+  three year term by two months.
+- Configurable option types are read as numeric codes as well as words: WHMCS
+  sends 1 dropdown, 2 radio, 3 yes/no, 4 quantity.
+- The quantity minimum is read from `minqty`, the field `GetProducts` sends,
+  in addition to `qtyminimum` and `qtymin`.
+- A billing cycle a product is not sold on renders nothing. WHMCS quotes
+  -1.00 there as a marker; divided by a number of months it became a small
+  negative figure, and with an options floor added it read as a real price.
+
+---
+
 ## 1.2.0
 
 ### The price block had semantic markup and no stylesheet
