@@ -20,7 +20,15 @@
 	var InspectorControls = blockEditor.InspectorControls;
 	var useBlockProps = blockEditor.useBlockProps;
 
+	/**
+	 * Under API version 3 the editor renders inside an iframe and useBlockProps
+	 * must land on the element the block actually owns. The inspector controls
+	 * are a slot, so they belong beside that element rather than inside it.
+	 */
+	var Fragment = element.Fragment;
+
 	blocks.registerBlockType('whmcs-pi/domain-price', {
+		apiVersion: 3,
 		title: __('WHMCS domain price', 'whmcs-pi'),
 		description: __(
 			'Shows the live registration and renewal price for a domain extension.',
@@ -146,7 +154,7 @@
 				);
 			}
 
-			return el('div', blockProps, [controls, preview]);
+			return el(Fragment, null, controls, el('div', blockProps, preview));
 		},
 
 		// Rendered server side: nothing is stored in the post content, so a
@@ -166,6 +174,7 @@
 	 * @since 1.3.0
 	 */
 	blocks.registerBlockType('whmcs-pi/product-price', {
+		apiVersion: 3,
 		title: __('WHMCS product price', 'whmcs-pi'),
 		description: __(
 			'Shows the live price of a WHMCS product, options included.',
@@ -174,6 +183,46 @@
 		icon: 'cart',
 		category: 'widgets',
 		keywords: [__('price', 'whmcs-pi'), __('product', 'whmcs-pi'), 'whmcs'],
+
+		/**
+		 * Declared here as well as in PHP.
+		 *
+		 * The editor normally merges the server definition into a client
+		 * registration, but that leaves the block unusable if the merge does
+		 * not happen — the editor then reports the block as unsupported even
+		 * though it renders correctly on the front end. Declaring them on both
+		 * sides removes the dependency; PHP stays the source of truth for
+		 * rendering.
+		 */
+		attributes: {
+			pid: { type: 'number', default: 0 },
+			period: { type: 'string', default: 'monthly' },
+			showMonthly: { type: 'boolean', default: true },
+			withOptions: { type: 'boolean', default: true },
+			options: { type: 'string', default: '' },
+			optionsMin: { type: 'string', default: '' },
+			promoPrice: { type: 'boolean', default: true },
+			showPeriod: { type: 'boolean', default: true },
+			showFrom: { type: 'boolean', default: false },
+			label: { type: 'string', default: '' }
+		},
+
+		supports: {
+			html: false,
+			spacing: { margin: true, padding: true },
+			typography: {
+				fontSize: true,
+				lineHeight: true,
+				textAlign: true,
+				__experimentalFontFamily: true,
+				__experimentalFontWeight: true,
+				__experimentalFontStyle: true,
+				__experimentalTextTransform: true,
+				__experimentalLetterSpacing: true
+			},
+			color: { text: true, background: true, gradients: true, link: false },
+			__experimentalBorder: { color: true, radius: true, style: true, width: true }
+		},
 
 		edit: function (props) {
 			var attributes = props.attributes;
@@ -355,7 +404,7 @@
 				);
 			}
 
-			return el('div', blockProps, [controls, preview]);
+			return el(Fragment, null, controls, el('div', blockProps, preview));
 		},
 
 		// Rendered server side, for the same reason as the domain block.

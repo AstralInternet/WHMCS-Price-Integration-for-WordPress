@@ -15,6 +15,52 @@ fell into the failure branch. An array is now the success case.
 A response that reports `success` with no product in it is reported separately:
 WHMCS answered, so the product id is what needs checking, not the connection.
 
+### Block API version 3
+
+WordPress 7.1 reports API version 2 as deprecated since 6.9: every editor is
+moving to an iframe, and a block that has not declared version 3 keeps the post
+editor out of one.
+
+Both blocks move to version 3. The code needed almost nothing: `useBlockProps()`
+already landed on the element each block owns, the stylesheet already reached
+the iframe through the block's own `style` handle, and `ServerSideRender` is
+iframe-safe. Nothing in the script touches `document` or `window`.
+
+One correction went with it. `edit()` returned the inspector controls as a
+child of the block element. They are a slot and belong beside it, so both now
+return a fragment holding the controls and the block.
+
+### Editor assets are versioned by their own modification time
+
+The plugin version alone had been used to bust caches on the editor script and
+stylesheet. An asset edited between two releases therefore kept the same URL,
+and browsers went on running the file they already held.
+
+That is how the product block came to render perfectly on the front end while
+the editor reported it as unsupported: it had been added to the editor script
+after the version was bumped, so the browser was still executing the previous
+script, which knew only the domain block.
+
+`whmcs_pi_asset_version()` appends the file's modification time, so the URL
+changes whenever the file does and never otherwise.
+
+### Both blocks take the editor's layout controls
+
+Neither block offered margin, padding, colour or typography: they were the only
+elements on a page an author could not space or restyle, and a price sitting
+flush against the paragraph above it had to be fixed with a spacer block.
+
+Both now declare the standard supports — spacing, typography, colour, border.
+`get_block_wrapper_attributes()` was already in both render callbacks, so the
+generated classes and inline styles apply with no further work. Every size
+inside the block is in em, so setting the block font size scales the amount and
+its period together instead of knocking them out of proportion.
+
+The stylesheet centred the price unconditionally, which would have overridden
+any alignment chosen in the editor. It now steps aside as soon as WordPress
+stamps an alignment class, and mirrors that alignment onto the flex row, which
+does not follow `text-align` on its own.
+
 ### A block for product prices
 
 `whmcs_products` covered the shortcode case, but a price on a sales page is
@@ -34,6 +80,17 @@ The product block would have printed "from" and "/month" on a French page:
 none of the strings added in this release existed in a catalogue. **52 strings**
 translated and added to `fr_CA` and `fr_FR`, catalogues recompiled. That count
 includes two from 1.2.0 that had been missed.
+
+**The block editor was never translatable at all.** Editor strings live in
+JavaScript and `wp.i18n` reads a JSON catalogue of its own, so a `.mo` cannot
+reach them — and `wp_set_script_translations()` had never been called. Every
+label in the block inspector had rendered in English since 1.0.0, including the
+domain block's, whose strings had been sitting translated in the catalogues all
+along.
+
+The call is now made and the JSON catalogues ship with the plugin, under both
+names WordPress looks for: the md5-of-path form and the handle form. All 56
+editor strings resolve.
 
 ### Quoting a price that includes mandatory options
 

@@ -15,6 +15,93 @@
 defined('ABSPATH') or die('No script kiddies please!');
 
 /**
+ * Cache-busting version for one plugin asset.
+ *
+ * The plugin version alone is not enough: an asset edited between two releases
+ * keeps the same URL, so browsers hold the old file. That is not theoretical —
+ * a block added to the editor script after the version had already been bumped
+ * stayed invisible in the editor while rendering perfectly on the front end,
+ * because the browser was still running the previous script.
+ *
+ * The file modification time is appended, so the URL changes whenever the file
+ * does and never otherwise.
+ *
+ * @since 1.3.0
+ * @param string $p_relative Path of the asset inside the plugin folder
+ * @return string Version string for wp_register_script() or wp_register_style()
+ */
+function whmcs_pi_asset_version($p_relative)
+{
+    $file = plugin_dir_path(WHMCS_PI_FILE) . $p_relative;
+
+    if (!file_exists($file)) {
+        return WHMCS_PI_VERSION;
+    }
+
+    return WHMCS_PI_VERSION . '.' . filemtime($file);
+}
+
+/**
+ * Editor controls both price blocks expose.
+ *
+ * Declaring them is all it takes: WordPress renders the panels and
+ * get_block_wrapper_attributes(), which both render callbacks already use,
+ * applies the resulting classes and inline styles. Without this the blocks
+ * were the only elements on a page an author could not space or restyle.
+ *
+ * Kept in one function so the two blocks cannot drift apart.
+ *
+ * @since 1.3.0
+ * @return array
+ */
+function whmcs_pi_block_supports()
+{
+    return array(
+
+        // No raw HTML editing: the markup is rebuilt server side on every load.
+        'html' => false,
+
+        'spacing' => array(
+            'margin'                        => true,
+            'padding'                       => true,
+            '__experimentalDefaultControls' => array('margin' => true),
+        ),
+
+        /**
+         * Sizes inside the block are all in em, so setting the block font size
+         * scales the amount, its period and the notes together rather than
+         * knocking them out of proportion.
+         */
+        'typography' => array(
+            'fontSize'                      => true,
+            'lineHeight'                    => true,
+            'textAlign'                     => true,
+            '__experimentalFontFamily'      => true,
+            '__experimentalFontWeight'      => true,
+            '__experimentalFontStyle'       => true,
+            '__experimentalTextTransform'   => true,
+            '__experimentalLetterSpacing'   => true,
+            '__experimentalDefaultControls' => array('fontSize' => true),
+        ),
+
+        // The stylesheet sets no colour of its own, so both inherit cleanly.
+        'color' => array(
+            'text'       => true,
+            'background' => true,
+            'gradients'  => true,
+            'link'       => false,
+        ),
+
+        '__experimentalBorder' => array(
+            'color'  => true,
+            'radius' => true,
+            'style'  => true,
+            'width'  => true,
+        ),
+    );
+}
+
+/**
  * Register the domain price block.
  *
  * Rendered server side so the price is never baked into the saved post
@@ -41,9 +128,23 @@ function whmcs_pi_register_block()
             'wp-i18n',
             'wp-server-side-render',
         ),
-        WHMCS_PI_VERSION,
+        whmcs_pi_asset_version('assets/block-editor.js'),
         true
     );
+
+    /**
+     * Editor strings live in JavaScript, so the .mo catalogues cannot reach
+     * them: wp.i18n reads a JSON file of its own. Without this call every
+     * label in the block inspector stays in English however complete the
+     * catalogues are.
+     */
+    if (function_exists('wp_set_script_translations')) {
+        wp_set_script_translations(
+            'whmcs-pi-block',
+            'whmcs-pi',
+            plugin_dir_path(WHMCS_PI_FILE) . 'languages'
+        );
+    }
 
     /**
      * Colour-free stylesheet: the block inherits the surrounding text colour,
@@ -54,11 +155,11 @@ function whmcs_pi_register_block()
         'whmcs-pi-block-style',
         plugins_url('assets/block.css', WHMCS_PI_FILE),
         array(),
-        WHMCS_PI_VERSION
+        whmcs_pi_asset_version('assets/block.css')
     );
 
     register_block_type('whmcs-pi/domain-price', array(
-        'api_version'     => 2,
+        'api_version'     => 3,
         'style'           => 'whmcs-pi-block-style',
         'title'           => __('WHMCS domain price', 'whmcs-pi'),
         'description'     => __('Shows the live registration and renewal price for a domain extension.', 'whmcs-pi'),
@@ -66,6 +167,7 @@ function whmcs_pi_register_block()
         'icon'            => 'tag',
         'keywords'        => array(__('price', 'whmcs-pi'), __('domain', 'whmcs-pi'), 'whmcs'),
         'editor_script'   => 'whmcs-pi-block',
+        'supports'        => whmcs_pi_block_supports(),
         'attributes'      => array(
             'tld'       => array('type' => 'string', 'default' => ''),
             'years'     => array('type' => 'number', 'default' => 1),

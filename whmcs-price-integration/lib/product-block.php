@@ -30,7 +30,7 @@ function whmcs_pi_register_product_block()
     }
 
     register_block_type('whmcs-pi/product-price', array(
-        'api_version'     => 2,
+        'api_version'     => 3,
         'style'           => 'whmcs-pi-block-style',
         'title'           => __('WHMCS product price', 'whmcs-pi'),
         'description'     => __('Shows the live price of a WHMCS product, options included.', 'whmcs-pi'),
@@ -38,6 +38,7 @@ function whmcs_pi_register_product_block()
         'icon'            => 'cart',
         'keywords'        => array(__('price', 'whmcs-pi'), __('product', 'whmcs-pi'), 'whmcs'),
         'editor_script'   => 'whmcs-pi-block',
+        'supports'        => whmcs_pi_block_supports(),
         'attributes'      => array(
             'pid'         => array('type' => 'number', 'default' => 0),
             'period'      => array('type' => 'string',  'default' => 'monthly'),

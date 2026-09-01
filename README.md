@@ -91,8 +91,13 @@ Block settings:
   of the `options` and `optionsmin` shortcode attributes.
 - **Label**, **Show the billing period**, **Prefix with "from"**.
 
-Both blocks are rendered server side, so no price is stored in the saved post
-content where it could go stale unnoticed.
+Both blocks use block API version 3 and are rendered server side, so no price
+is stored in the saved post content where it could go stale unnoticed.
+
+Both also take the editor's usual layout controls — margin, padding, colour,
+border and typography — so a price can be spaced and styled like any other
+block. Sizes inside the block are relative, so changing the block font size
+scales the amount and its period together.
 
 ## Shortcodes
 

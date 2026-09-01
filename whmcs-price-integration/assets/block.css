@@ -13,8 +13,16 @@
  * @since 1.2.0
  */
 
-.whmcs-pi-price {
+/**
+ * Centred by default, but an alignment chosen in the editor has to win.
+ * The rule is skipped as soon as WordPress stamps an alignment class on the
+ * wrapper, rather than fighting it on specificity.
+ */
+.whmcs-pi-price:not([class*="has-text-align"]) {
 	text-align: center;
+}
+
+.whmcs-pi-price {
 	margin-block: 1em;
 }
 
@@ -36,6 +44,19 @@
 	justify-content: center;
 	gap: 0.15em 0.45em;
 	margin: 0;
+}
+
+/**
+ * A flex row does not follow text-align, so the alignment chosen in the editor
+ * has to be mirrored onto justify-content or the amount stays centred whatever
+ * the author picked.
+ */
+.whmcs-pi-price.has-text-align-left .whmcs-pi-price__body {
+	justify-content: flex-start;
+}
+
+.whmcs-pi-price.has-text-align-right .whmcs-pi-price__body {
+	justify-content: flex-end;
 }
 
 .whmcs-pi-price__amount {
