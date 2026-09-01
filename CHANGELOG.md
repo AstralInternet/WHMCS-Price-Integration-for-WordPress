@@ -15,6 +15,17 @@ fell into the failure branch. An array is now the success case.
 A response that reports `success` with no product in it is reported separately:
 WHMCS answered, so the product id is what needs checking, not the connection.
 
+### Prices can feed structured data
+
+A price destined for a `<script type="application/ld+json">` block cannot carry
+the `<span>` the shortcode wraps every value in — the JSON stops parsing. A
+product page that wants `Product` and `Offer` markup therefore had to hard-code
+the very figures the plugin exists to keep live.
+
+`raw="true"` returns the value alone. Every failure returns an empty string
+rather than an error sentence, which inside a JSON-LD document would invalidate
+the whole thing.
+
 ### A plain style, and control over the currency notation
 
 The default style is built for a price standing on its own: amplified amount,

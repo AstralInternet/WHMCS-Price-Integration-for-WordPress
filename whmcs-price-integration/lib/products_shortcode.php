@@ -64,6 +64,10 @@ defined('ABSPATH') or die('No script kiddies please!');
  *   optionsmin (default empty): Quantity minimums WHMCS does not report, as id:minimum pairs,
  *                               for instance optionsmin="913:10". Only used when the API gives
  *                               no minimum for that option; a reported minimum always wins.
+ *   raw (default false): Return the bare value with no markup, so the shortcode can be used
+ *                       inside a <script> block for structured data. A failure returns an
+ *                       empty string rather than an error message, which would make the
+ *                       surrounding JSON invalid.
  *   debugapi (default false): When the API call fails, print the reason WHMCS gave instead of
  *                             the neutral notice. Visible only to users allowed to manage
  *                             options: WHMCS wording can name internal details.
@@ -74,13 +78,23 @@ function whmcs_products_func($p_atts)
     // Clean the short code attribute
     $arguments = whmcs_products_func_clean_attribute($p_atts);
 
+    /**
+     * In raw mode every failure returns an empty string.
+     *
+     * The value is destined for a <script> block, where an error sentence
+     * would make the whole JSON-LD document invalid — a far worse outcome
+     * than a missing price. The notice belongs on screen, not in a document
+     * a search engine parses.
+     */
+    $muet = !empty($arguments['raw']);
+
     // Validate the PID
     $pidValidation = whmcs_products_func_validade_pid($arguments['pid']);
-    if (!$pidValidation['success']) return $pidValidation['msg'];
+    if (!$pidValidation['success']) return $muet ? '' : $pidValidation['msg'];
 
     // Validate the period
     $periodValidation = whmcs_products_func_validade_period($arguments['period']);
-    if (!$periodValidation['success']) return $periodValidation['msg'];
+    if (!$periodValidation['success']) return $muet ? '' : $periodValidation['msg'];
 
     // Initiate the product class
     $productObj = WHMCS_PI_Main::load_product_class();
@@ -111,7 +125,7 @@ function whmcs_products_func($p_atts)
             );
         }
 
-        return $apiValidation['msg'];
+        return $muet ? '' : $apiValidation['msg'];
     }
 
     // Prepare the prefix for prices output
@@ -213,7 +227,7 @@ function whmcs_products_func($p_atts)
     if ($arguments['optionsonly']) {
         return whmcs_products_func_prepareOutput(
             number_format($optionsForOutput, 2, '.', ''),
-            $arguments['class'], $prefix, $suffix
+            $arguments['class'], $prefix, $suffix, false, $arguments['raw']
         );
     }
 
@@ -227,7 +241,7 @@ function whmcs_products_func($p_atts)
 
     return whmcs_products_func_prepareOutput(
         number_format($price + $optionsForOutput, 2, '.', ''),
-        $arguments['class'], $prefix, $suffix
+        $arguments['class'], $prefix, $suffix, false, $arguments['raw']
     );
 }
 
@@ -308,14 +322,15 @@ function whmcs_products_func_clean_attribute($p_attr)
         'optionsonly' => false,
         'debugoptions' => false,
         'debugapi' => false,
-        'optionsmin' => ''
+        'optionsmin' => '',
+        'raw' => false
     ), $p_attr);
 
     // Define an array of boolean attribute
     $boolAttribute = array(
         'productname', 'description', 'setupfee', 'showmonthlyprice', 'promoprice', 'promodiscount',
         'promocode', 'bypasscache', 'whmcsprefix', 'whmcssuffix', 'withoptions', 'optionsonly',
-        'debugoptions', 'debugapi'
+        'debugoptions', 'debugapi', 'raw'
     );
 
     // Convert value into real boolean
@@ -807,8 +822,19 @@ function whmcs_products_func_validade_pid($p_pid)
  * @param bool Whether the response is an error or not
  * @return string
  */
-function whmcs_products_func_prepareOutput($p_msg, $p_class, $p_prefix = '', $p_suffix = '', $p_isError = false)
+function whmcs_products_func_prepareOutput($p_msg, $p_class, $p_prefix = '', $p_suffix = '', $p_isError = false, $p_raw = false)
 {
+
+    /**
+     * Raw output carries no markup, so the value can sit inside a <script>
+     * block. An error returns nothing at all: an error sentence dropped into
+     * a JSON-LD document would make the whole document invalid, which is a
+     * worse outcome than a missing price.
+     */
+    if ($p_raw) {
+        return $p_isError ? '' : $p_prefix . $p_msg . $p_suffix;
+    }
+
 
     /**
      * The class may come from a shortcode attribute, the message and its

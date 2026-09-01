@@ -156,9 +156,30 @@ Shortcode attributes:
 - **optionsmin** (default empty): quantity minimums as `id:minimum` pairs, e.g.
   `optionsmin="913:10"`. A minimum reported by WHMCS always wins; this is only
   a fallback for an option it does not report one for
+- **raw** (default false): return the bare value with no markup
 - **debugapi** (default false): when the call fails, print the reason WHMCS
   gave instead of the neutral notice. Visible only to users who can manage
   options
+
+#### Feeding structured data
+
+A price inside a `<script type="application/ld+json">` block cannot arrive
+wrapped in a `<span>`: the JSON would no longer parse. `raw="true"` returns the
+value alone.
+
+```
+<!-- wp:html -->
+<script type="application/ld+json">
+{ "@type": "Offer", "priceCurrency": "CAD",
+  "price": "[whmcs_products pid="468" period="annually" withoptions="true" raw="true"]" }
+</script>
+<!-- /wp:html -->
+```
+
+Shortcodes are processed inside HTML blocks, so the price is resolved when the
+page renders. In raw mode every failure returns an empty string rather than an
+error message: a sentence dropped into a JSON-LD document would invalidate the
+whole document, which is worse than a missing price.
 
 A billing cycle the product is not sold on renders nothing: WHMCS marks those
 with -1.00, which is not an amount.
