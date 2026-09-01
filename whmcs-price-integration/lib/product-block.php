@@ -49,7 +49,9 @@ function whmcs_pi_register_product_block()
             'promoPrice'  => array('type' => 'boolean', 'default' => true),
             'showPeriod'  => array('type' => 'boolean', 'default' => true),
             'showFrom'    => array('type' => 'boolean', 'default' => false),
-            'label'       => array('type' => 'string',  'default' => ''),
+            'label'        => array('type' => 'string',  'default' => ''),
+            'customPrefix' => array('type' => 'string',  'default' => ''),
+            'customSuffix' => array('type' => 'string',  'default' => ''),
         ),
         'render_callback' => 'whmcs_pi_render_product_price',
     ));
@@ -175,9 +177,26 @@ function whmcs_pi_render_product_price($p_attributes)
         );
     }
 
+    /**
+     * An affix supplied by the author replaces the locale formatting.
+     *
+     * Supplying one is a statement that the notation is being controlled from
+     * the page — to match figures already written around it, for instance —
+     * so the amount is rendered plainly rather than through NumberFormatter,
+     * which would add a second currency mark. This mirrors the shortcode.
+     */
+    $prefix = isset($p_attributes['customPrefix']) ? (string) $p_attributes['customPrefix'] : '';
+    $suffix = isset($p_attributes['customSuffix']) ? (string) $p_attributes['customSuffix'] : '';
+
+    if ($prefix !== '' || $suffix !== '') {
+        $amount = $prefix . number_format($price, 2, '.', '') . $suffix;
+    } else {
+        $amount = WHMCS_PI_Main::format_currency($price);
+    }
+
     $lines[] = sprintf(
         '<span class="whmcs-pi-price__amount">%s</span>',
-        esc_html(WHMCS_PI_Main::format_currency($price))
+        esc_html($amount)
     );
 
     if (!empty($p_attributes['showPeriod'])) {

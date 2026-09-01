@@ -183,6 +183,38 @@ function whmcs_pi_register_block()
 add_action('init', 'whmcs_pi_register_block');
 
 /**
+ * Register the "plain" style shared by both price blocks.
+ *
+ * The default style is built for a price standing on its own: the amount is
+ * amplified, the row centred, a vertical margin added. Dropped into a layout
+ * that already sets its own typography — a hand-built row with a label beside
+ * the figure and a footnote after it — that amplification fights the design
+ * instead of serving it.
+ *
+ * The plain style makes the block render as ordinary inline text in whatever
+ * typography surrounds it, so a live price can replace a hard-coded one
+ * without the page changing appearance.
+ *
+ * @since 1.3.0
+ * @return void
+ */
+function whmcs_pi_register_block_styles()
+{
+    if (!function_exists('register_block_style')) {
+        return;
+    }
+
+    foreach (array('whmcs-pi/domain-price', 'whmcs-pi/product-price') as $block) {
+        register_block_style($block, array(
+            'name'  => 'plain',
+            'label' => __('Plain', 'whmcs-pi'),
+        ));
+    }
+}
+
+add_action('init', 'whmcs_pi_register_block_styles', 12);
+
+/**
  * Resolve which TLD a block instance refers to.
  *
  * When the attribute is left empty the post slug is used. On a post type whose

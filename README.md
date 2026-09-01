@@ -90,6 +90,13 @@ Block settings:
 - **Count only these options** and **Quantity minimums**: the block equivalents
   of the `options` and `optionsmin` shortcode attributes.
 - **Label**, **Show the billing period**, **Prefix with "from"**.
+- **Currency prefix** and **Currency suffix**: replace the automatic locale
+  formatting when the notation has to match figures already written on the
+  page. Left empty, the price is formatted for the site locale.
+
+Both blocks offer a **Plain** style, which hands the typography back to the
+surrounding element. Use it when the block replaces a hard-coded figure inside
+an existing layout; the default style suits a price standing on its own.
 
 Both blocks use block API version 3 and are rendered server side, so no price
 is stored in the saved post content where it could go stale unnoticed.

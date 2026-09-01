@@ -15,6 +15,24 @@ fell into the failure branch. An array is now the success case.
 A response that reports `success` with no product in it is reported separately:
 WHMCS answered, so the product id is what needs checking, not the connection.
 
+### A plain style, and control over the currency notation
+
+The default style is built for a price standing on its own: amplified amount,
+centred row, vertical margin. Dropped into a layout that already sets its own
+typography — a hand-built row with a label beside the figure and a footnote
+after it — that amplification fights the design rather than serving it.
+
+A **Plain** block style hands all of it back to the surrounding element, so a
+live price can take the place of a hard-coded one without the page changing
+appearance.
+
+`customPrefix` and `customSuffix` do the same for the notation. Supplying
+either is a statement that the notation is controlled from the page, so the
+amount is rendered plainly instead of through `NumberFormatter`, which would
+otherwise add a second currency mark. Left empty, locale formatting applies as
+before. This mirrors the shortcode, so the two can be mixed on one page without
+the figures disagreeing.
+
 ### Block API version 3
 
 WordPress 7.1 reports API version 2 as deprecated since 6.9: every editor is

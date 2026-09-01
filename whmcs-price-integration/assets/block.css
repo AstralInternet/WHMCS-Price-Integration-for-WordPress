@@ -116,3 +116,38 @@
 	opacity: 0.75;
 	margin-right: 0.15em;
 }
+
+/**
+ * Plain style: the block gives up its own typography.
+ *
+ * Everything that makes the default style stand alone — the amplified amount,
+ * the centring, the vertical margin, the muted qualifiers — is handed back to
+ * the surrounding element, so the block can take the place of a hard-coded
+ * figure inside an existing layout without changing how the page looks.
+ */
+.whmcs-pi-price.is-style-plain {
+	margin-block: 0;
+	display: inline;
+	text-align: inherit;
+}
+
+.whmcs-pi-price.is-style-plain .whmcs-pi-price__body {
+	display: inline-flex;
+	gap: 0.25em;
+	justify-content: inherit;
+}
+
+.whmcs-pi-price.is-style-plain .whmcs-pi-price__amount,
+.whmcs-pi-price.is-style-plain .whmcs-pi-price__from,
+.whmcs-pi-price.is-style-plain .whmcs-pi-price__period,
+.whmcs-pi-price.is-style-plain .whmcs-pi-price__renew {
+	font-size: inherit;
+	font-weight: inherit;
+	line-height: inherit;
+	letter-spacing: inherit;
+	opacity: 1;
+}
+
+.whmcs-pi-price.is-style-plain .whmcs-pi-price__label {
+	display: none;
+}

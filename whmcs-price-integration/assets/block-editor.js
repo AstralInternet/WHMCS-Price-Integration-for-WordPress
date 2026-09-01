@@ -204,7 +204,9 @@
 			promoPrice: { type: 'boolean', default: true },
 			showPeriod: { type: 'boolean', default: true },
 			showFrom: { type: 'boolean', default: false },
-			label: { type: 'string', default: '' }
+			label: { type: 'string', default: '' },
+			customPrefix: { type: 'string', default: '' },
+			customSuffix: { type: 'string', default: '' }
 		},
 
 		supports: {
@@ -354,6 +356,26 @@
 						checked: !!attributes.showPeriod,
 						onChange: function (value) {
 							setAttributes({ showPeriod: value });
+						}
+					}),
+
+					el(components.TextControl, {
+						label: __('Currency prefix', 'whmcs-pi'),
+						help: __(
+							'Replaces the automatic currency formatting. Use it to match figures already written on the page.',
+							'whmcs-pi'
+						),
+						value: attributes.customPrefix,
+						onChange: function (value) {
+							setAttributes({ customPrefix: value });
+						}
+					}),
+
+					el(components.TextControl, {
+						label: __('Currency suffix', 'whmcs-pi'),
+						value: attributes.customSuffix,
+						onChange: function (value) {
+							setAttributes({ customSuffix: value });
 						}
 					}),
 
