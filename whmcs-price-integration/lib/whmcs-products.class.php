@@ -86,12 +86,45 @@ class Products extends whmcsAPI
     }
 
     /**
+     * Option name holding the cached copy of one product.
+     *
+     * The prefix belongs in the key. The promotion is applied on the way into
+     * the cache, so two callers asking for two different codes describe two
+     * different products as far as this cache is concerned. Sharing one entry
+     * between them meant the first render of the day decided the price the
+     * whole site showed for the next twenty-four hours, silently and with no
+     * error anywhere.
+     *
+     * A code is kept verbatim when it is already safe in an option name, so
+     * "whmcs-pi_pid-461-whfirstterm" can be read and deleted by hand. Anything
+     * else is hashed rather than mangled, since two codes must never collapse
+     * onto one key.
+     *
+     * @since 1.4.0
+     * @param int         $p_pid          Product id
+     * @param string|null $p_promoPrefix  Promotion prefix, null for none
+     * @return string
+     */
+    private static function _CacheKey($p_pid, $p_promoPrefix)
+    {
+        $key = 'whmcs-pi_pid-' . (int) $p_pid;
+
+        if ($p_promoPrefix === null || $p_promoPrefix === '') {
+            return $key;
+        }
+
+        return $key . '-' . (preg_match('/^[A-Za-z0-9_-]{1,40}$/', $p_promoPrefix)
+            ? $p_promoPrefix
+            : substr(md5($p_promoPrefix), 0, 12));
+    }
+
+    /**
      * Function that gets a products information
-     * 
+     *
      * @param int product pid
      * @param string promotion prefix if any (not to use all the promo code)
      * @param boolean Force a refresh even if the page was ran less than one hour agao
-     * 
+     *
      * @return array Complete product detail
      */
     public function GetProducts($p_pid, $p_promoPrefix = null, $p_forceNew = false)
@@ -100,10 +133,12 @@ class Products extends whmcsAPI
         // Define a variable to trigger if can bypass the API CAll
         $passDBCheck = $p_forceNew;
 
+        $cacheKey = self::_CacheKey($p_pid, $p_promoPrefix);
+
         // Pull out the information from the DB if it is present
         if (!$passDBCheck) {
 
-            $productDBInfo = get_option('whmcs-pi_pid-' . $p_pid);
+            $productDBInfo = get_option($cacheKey);
 
             // If the db was non existant, we need to proceed to the API call
             if (!$productDBInfo) {
@@ -155,7 +190,7 @@ class Products extends whmcsAPI
             // Save the content with timestamp to speedup site load time
             $productDBInfo['timestamp'] = microtime(true);
             $productDBInfo['data'] = $data;
-            update_option('whmcs-pi_pid-' . $p_pid, $productDBInfo, 'no');
+            update_option($cacheKey, $productDBInfo, 'no');
         } else {
 
             // Get the data from the array saved in the DB
@@ -261,8 +296,13 @@ class Products extends whmcsAPI
                 // Check if a prefix was provided
                 if (!is_null($p_promoPrefix)) {
 
-                    // Check if code match the prefix
-                    if (strrpos($promoCode, $p_promoPrefix) === 0) {
+                    /**
+                     * strrpos() searched from the right, so a code carrying the
+                     * prefix twice reported the second occurrence and failed the
+                     * === 0 test. WordPress polyfills str_starts_with() below
+                     * PHP 8.0, so it is safe at the declared 7.4 floor.
+                     */
+                    if (str_starts_with($promoCode, $p_promoPrefix)) {
 
                         // Add the promotion to the array
                         $promotions[$promoCode] = $promotion;

@@ -46,7 +46,16 @@ function whmcs_pi_register_product_block()
             'withOptions' => array('type' => 'boolean', 'default' => true),
             'options'     => array('type' => 'string',  'default' => ''),
             'optionsMin'  => array('type' => 'string',  'default' => ''),
-            'promoPrice'  => array('type' => 'boolean', 'default' => true),
+            /**
+             * Off by default since 1.4.0.
+             *
+             * On by default, a block dropped on a page with nothing configured
+             * published whichever promotion WHMCS listed first for that product
+             * — including one restricted to a single client. A promotional
+             * price is now something an author asks for, and names.
+             */
+            'promoPrice'  => array('type' => 'boolean', 'default' => false),
+            'promoCode'   => array('type' => 'string',  'default' => ''),
             'showPeriod'  => array('type' => 'boolean', 'default' => true),
             'showFrom'    => array('type' => 'boolean', 'default' => false),
             'label'        => array('type' => 'string',  'default' => ''),
@@ -112,8 +121,16 @@ function whmcs_pi_render_product_price($p_attributes)
         return '';
     }
 
+    /**
+     * The prefix names which promotion to price against. Left empty, WHMCS
+     * order decides, which is arbitrary and can surface a private code.
+     */
+    $promoCode = isset($p_attributes['promoCode'])
+        ? trim((string) $p_attributes['promoCode'])
+        : '';
+
     $products = WHMCS_PI_Main::load_product_class();
-    $detail = $products->GetProducts($pid);
+    $detail = $products->GetProducts($pid, $promoCode === '' ? null : $promoCode);
 
     // Only a success comes back as an array; the staleness rule lives in the class.
     if (!is_array($detail) || !isset($detail['price'])) {

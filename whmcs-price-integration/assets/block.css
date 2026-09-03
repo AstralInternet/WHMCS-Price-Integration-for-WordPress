@@ -151,3 +151,30 @@
 .whmcs-pi-price.is-style-plain .whmcs-pi-price__label {
 	display: none;
 }
+
+/**
+ * Inline price: a figure inside a sentence, not a block of its own.
+ *
+ * Nothing here changes how the price looks — it inherits the paragraph it sits
+ * in, which is the whole point of the format. Only two things are asserted:
+ * the figure must not break across two lines, and its digits must not shuffle
+ * sideways when the amount changes on the next cache refresh.
+ *
+ * @since 1.4.0
+ */
+.whmcs-pi-inline {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+/**
+ * In the editor the text of an inline price reads exactly like the text the
+ * author typed around it, so nothing distinguishes a live figure from one
+ * somebody once pasted. The underline says which is which, and the selector
+ * keeps it there: .block-editor-rich-text__editable exists in the editor and
+ * nowhere else.
+ */
+.block-editor-rich-text__editable .whmcs-pi-inline {
+	text-decoration: underline dotted currentColor;
+	text-underline-offset: 0.2em;
+}

@@ -41,6 +41,9 @@ msgstr "5 ans"
 msgid "A .%s domain"
 msgstr "Un domaine .%s"
 
+msgid "A length WHMCS does not sell for this extension renders nothing, since the surrounding sentence would then describe an offer that does not exist."
+msgstr "Une durée que WHMCS ne vend pas pour cette extension n'affiche rien : la phrase qui l'entoure décrirait sinon une offre qui n'existe pas."
+
 msgid "API Configuration updated"
 msgstr "Configuration de l'API mise à jour"
 
@@ -64,6 +67,9 @@ msgstr "Secret d'API"
 
 msgid "Access key (optional)"
 msgstr "Clé d'accès (facultative)"
+
+msgid "Apply"
+msgstr "Appliquer"
 
 msgid "Arts and Entertainment"
 msgstr "Arts and Divertissements"
@@ -101,6 +107,15 @@ msgstr "WHMCS injoignable : %s"
 msgid "Create dedicated API credentials in WHMCS under Configuration > System Settings > API Credentials. Restrict them by IP address and grant only the pricing related roles."
 msgstr "Créez des identifiants d'API dédiés dans WHMCS sous Configuration > System Settings > API Credentials. Restreignez-les par adresse IP et n'accordez que les rôles liés aux tarifs."
 
+msgid "Currency prefix"
+msgstr "Préfixe monétaire"
+
+msgid "Currency suffix"
+msgstr "Suffixe monétaire"
+
+msgid "Domain extension"
+msgstr "Extension de domaine"
+
 msgid "Education"
 msgstr "Éducation"
 
@@ -112,6 +127,9 @@ msgstr "Erreur lors de l'appel de l'API : "
 
 msgid "Extension"
 msgstr "Extension"
+
+msgid "First year"
+msgstr "Première année"
 
 msgid "Food and Drink"
 msgstr "Nourriture et Boissons"
@@ -155,8 +173,14 @@ msgstr "Aucune clé"
 msgid "No price available yet. Check the plugin settings, or refresh the cache."
 msgstr "Aucun prix disponible pour l'instant. Vérifiez la configuration de l'extension ou rafraîchissez le cache."
 
+msgid "No price is available for these settings."
+msgstr "Aucun prix n'est disponible pour ces réglages."
+
 msgid "Novelty"
 msgstr "Nouveautés"
+
+msgid "Off by default. With no code named below, WHMCS decides which of the product's promotions applies and the order is arbitrary, so a private code can end up on a public page."
+msgstr "Désactivé par défaut. Sans code nommé ci-dessous, WHMCS choisit laquelle des promotions du produit s'applique et l'ordre est arbitraire : un code privé peut donc se retrouver sur une page publique."
 
 msgid "Optional heading shown above the price."
 msgstr "Titre facultatif affiché au-dessus du prix."
@@ -167,11 +191,23 @@ msgstr "Autre"
 msgid "Popular"
 msgstr "Populaire"
 
+msgid "Prefix of the WHMCS promotion code to price against, such as whfirstterm. Case sensitive, and matched from the start, so HW- covers every code beginning with it."
+msgstr "Préfixe du code de promotion WHMCS à utiliser, par exemple whfirstterm. Sensible à la casse et comparé depuis le début, donc HW- couvre tout code commençant ainsi."
+
 msgid "Price settings"
 msgstr "Réglages du prix"
 
+msgid "Price shown"
+msgstr "Prix affiché"
+
+msgid "Price source"
+msgstr "Source du prix"
+
 msgid "Pricing is temporarily unavailable."
 msgstr "Tarifs temporairement indisponibles."
+
+msgid "Promotion code"
+msgstr "Code de promotion"
 
 msgid "Real Estate"
 msgstr "Immobilier"
@@ -188,6 +224,12 @@ msgstr "Échec du rafraîchissement. Le cache précédent a été conservé."
 msgid "Registration length"
 msgstr "Durée d'enregistrement"
 
+msgid "Remove"
+msgstr "Retirer"
+
+msgid "Renewal"
+msgstr "Renouvellement"
+
 msgid "Renewal:"
 msgstr "Renouvellement :"
 
@@ -196,6 +238,9 @@ msgstr "Renouvellement : %s"
 
 msgid "Renews at the same price"
 msgstr "Renouvellement au même prix"
+
+msgid "Replaces the automatic currency formatting. Use it to match figures already written on the page."
+msgstr "Remplace le formatage monétaire automatique. À utiliser pour s'accorder aux montants déjà écrits dans la page."
 
 msgid "Save %1$d%% over %2$d years"
 msgstr "Économisez %1$d %% sur %2$d ans"
@@ -265,6 +310,9 @@ msgstr "Utilise l'identifiant de la page"
 
 msgid "WHMCS API error: %s"
 msgstr "Erreur de l'API WHMCS : %s"
+
+msgid "WHMCS price"
+msgstr "Prix WHMCS"
 
 msgid "WHMCS Price Integration"
 msgstr "Intégration des prix WHMCS"

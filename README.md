@@ -1,17 +1,17 @@
 # WHMCS Price Integration for WordPress
 Contributors: @astralinternet, @neutrall, @sleyeur
 Tags: whmcs, api
-Requires at least: 5.8
-Tested up to: 5.8
+Requires at least: 6.3
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 ## Description
 
 Display WHMCS product and domain prices directly inside WordPress pages, through
-a Gutenberg block or a shortcode.
+a Gutenberg block, an inline price inside a sentence, or a shortcode.
 
 - Prices are pulled from the WHMCS API once a day by WP-Cron and cached, so no
   visitor ever waits on the API.
@@ -82,8 +82,14 @@ Block settings:
   sold on renders nothing.
 - **Show the monthly equivalent** (default on): on an annual cycle, divides by
   twelve — how a yearly commitment is normally advertised.
-- **Use the promotional price** (default on): falls back to the regular price
-  when no promotion is configured.
+- **Use the promotional price** (default **off** since 1.4.0): a promotional
+  price is something an author asks for. Left on by default it published
+  whichever promotion WHMCS happened to list first for the product, which on
+  a product carrying several can be a code restricted to one client.
+- **Promotion code:** prefix of the WHMCS code to price against, such as
+  `whfirstterm`. Case sensitive, matched from the start, so `HW-` covers every
+  code beginning with it. Empty leaves the choice to WHMCS, in an order that is
+  arbitrary — name a code whenever the product carries more than one.
 - **Include the options floor** (default on): adds the cheapest selectable
   value of each configurable option. On a product sold with a mandatory account
   count or disk allowance, the bare product price is not what a customer pays.
@@ -105,6 +111,55 @@ Both also take the editor's usual layout controls — margin, padding, colour,
 border and typography — so a price can be spaced and styled like any other
 block. Sizes inside the block are relative, so changing the block font size
 scales the amount and its period together.
+
+## Inline price
+
+A block is a paragraph of its own, which is the wrong shape for a price quoted
+in the middle of a sentence — *"a .ca costs 14,99 $ for the first year"*.
+Gutenberg has no inline block, so the plugin adds what the inline image
+actually is: a **rich text format**.
+
+Put the caret where the figure belongs, or select the text it should replace,
+then pick **WHMCS price** from the paragraph toolbar (the arrow at the end of
+the formatting buttons). The popover asks what to quote, and **Apply** writes
+the current price into the sentence.
+
+It works anywhere the editor offers formatting: paragraphs, headings, list
+items, buttons, table cells, captions.
+
+The popover carries the same settings as the blocks:
+
+- **Price source:** a domain extension, or a product.
+- Domain — **Extension** (empty uses the page slug, as in the block),
+  **Registration length**, and **Price shown**: the first year or the renewal.
+- Product — **Product id**, **Billing cycle**, **Show the monthly
+  equivalent**, **Use the promotional price** (off by default) and
+  **Promotion code**, **Include the options floor**, **Count only these
+  options**, **Quantity minimums**.
+- **Currency prefix** and **Currency suffix**, which replace the automatic
+  locale formatting exactly as they do in the product block.
+
+A length WHMCS does not sell for the extension renders nothing at all, unlike
+the block: the block words its own period line and can say what it really
+quoted, while a figure dropped into a sentence somebody else wrote cannot.
+
+### What is stored, and what is live
+
+The paragraph keeps a marked `<span>` carrying the settings, and the figure
+inside it is rewritten by the server on every render. Three things follow from
+that:
+
+- The price is always current, like the blocks.
+- The figure visible in the saved content is a **fallback**. A visitor arriving
+  while the plugin is switched off reads the last known price instead of a hole
+  in the sentence, and the server takes over again the moment it is back.
+- Editing that post **while the plugin is deactivated** turns the price into
+  ordinary text for good: the editor drops formats it does not know about, and
+  saving makes that permanent.
+
+Formatting applied *inside* an inline price — bolding the figure itself, for
+instance — is replaced along with the figure. Apply it to the whole
+sentence, or to a stretch of text around the price, instead.
 
 ## Shortcodes
 
@@ -138,6 +193,11 @@ Shortcode attributes:
 - **promodiscount** (default false): return the promotion discount value instead
   of the price
 - **promocode** (default false): return the promotion code instead of the price
+- **promoprefix** (default empty): price against promotion codes starting with
+  this prefix, for instance `promoprefix="whfirstterm"`. Case sensitive.
+  Empty lets WHMCS decide which of the product's promotions applies, and the
+  order it returns them in is arbitrary. The prefix is part of the cache key,
+  so two codes on one product no longer share an entry
 - **bypasscache** (default false)
 - **class** (default empty): add a custom class name to the output
 - **whmcsprefix** (default false): display the WHMCS-defined prefix on prices

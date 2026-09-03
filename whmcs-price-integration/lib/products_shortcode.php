@@ -43,6 +43,10 @@ defined('ABSPATH') or die('No script kiddies please!');
  *                                  Will return the regular price if there is no promotion price.
  *   promodiscount (default false): If true, will return the promotion discount value instead of the regular price
  *   promocode (default false): If true, will return the promotion code instead of the current price
+ *   promoprefix (default empty): Price against promotion codes starting with this prefix, for
+ *                                instance promoprefix="whfirstterm". Empty lets WHMCS decide
+ *                                which of the product's promotions applies, and the order it
+ *                                returns them in is arbitrary. Also part of the cache key.
  *   bypasscache (default false): Bypass the cache of one hour. The cache is there to prevent overloading the WHMCS server
  *   class (default empty): Add a custom class name to the output result
  *   whmcsprefix ( default false): Display the WHMCS define prefix on prices
@@ -99,8 +103,24 @@ function whmcs_products_func($p_atts)
     // Initiate the product class
     $productObj = WHMCS_PI_Main::load_product_class();
 
+    /**
+     * A prefix names which promotion to price against.
+     *
+     * Without one WHMCS decides, and it decides by the order GetPromotions
+     * happens to return — which on a product carrying more than one code
+     * can be a private promotion never meant to reach a public page.
+     *
+     * Empty means null rather than an empty string, so the cache key stays
+     * the plain one and nothing already stored is orphaned.
+     */
+    $promoPrefix = trim((string) $arguments['promoprefix']);
+
     // Fetch the product Information from WHMCS (of the cache saved in the )
-    $pidDetail = $productObj->GetProducts($arguments['pid'], null, $arguments['bypasscache']);
+    $pidDetail = $productObj->GetProducts(
+        $arguments['pid'],
+        $promoPrefix === '' ? null : $promoPrefix,
+        $arguments['bypasscache']
+    );
 
     // Validate the API Call
     $apiValidation = whmcs_products_func_validade_api_call($pidDetail);
@@ -323,7 +343,8 @@ function whmcs_products_func_clean_attribute($p_attr)
         'debugoptions' => false,
         'debugapi' => false,
         'optionsmin' => '',
-        'raw' => false
+        'raw' => false,
+        'promoprefix' => ''
     ), $p_attr);
 
     // Define an array of boolean attribute

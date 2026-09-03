@@ -201,7 +201,8 @@
 			withOptions: { type: 'boolean', default: true },
 			options: { type: 'string', default: '' },
 			optionsMin: { type: 'string', default: '' },
-			promoPrice: { type: 'boolean', default: true },
+			promoPrice: { type: 'boolean', default: false },
+			promoCode: { type: 'string', default: '' },
 			showPeriod: { type: 'boolean', default: true },
 			showFrom: { type: 'boolean', default: false },
 			label: { type: 'string', default: '' },
@@ -286,12 +287,25 @@
 					el(components.ToggleControl, {
 						label: __('Use the promotional price', 'whmcs-pi'),
 						help: __(
-							'Falls back to the regular price when no promotion is configured.',
+							'Off by default. With no code named below, WHMCS decides which of the product\'s promotions applies and the order is arbitrary, so a private code can end up on a public page.',
 							'whmcs-pi'
 						),
 						checked: !!attributes.promoPrice,
 						onChange: function (value) {
 							setAttributes({ promoPrice: value });
+						}
+					}),
+
+					el(components.TextControl, {
+						label: __('Promotion code', 'whmcs-pi'),
+						help: __(
+							'Prefix of the WHMCS promotion code to price against, such as whfirstterm. Case sensitive, and matched from the start, so HW- covers every code beginning with it.',
+							'whmcs-pi'
+						),
+						value: attributes.promoCode,
+						disabled: !attributes.promoPrice,
+						onChange: function (value) {
+							setAttributes({ promoCode: value });
 						}
 					})
 				),

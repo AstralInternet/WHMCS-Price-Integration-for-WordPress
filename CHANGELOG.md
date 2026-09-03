@@ -2,6 +2,106 @@
 
 All notable changes to WHMCS Price Integration for WordPress.
 
+## 1.4.0
+
+### A price inside a sentence
+
+Everything the plugin rendered until now was a paragraph of its own. That is
+the right shape for a price standing on a pricing page and the wrong one for a
+price quoted mid-sentence — *"a .ca costs 14,99 $ for the first year"* —
+where the only options were a shortcode typed blind into the paragraph, or a
+figure hard-coded and forgotten.
+
+Gutenberg has no inline block, and it never had one: the inline image every
+author knows is a **rich text format**. So is the new **WHMCS price** entry in
+the paragraph toolbar. Put the caret where the figure belongs, choose what to
+quote, and the current price is written into the sentence — in a paragraph,
+a heading, a list item, a button, a table cell.
+
+The settings ride along in the paragraph as data attributes on a marked
+`<span>`, and the server rewrites what that span holds on every render. The
+figure sitting in the saved content is therefore a fallback rather than the
+source of truth: a visitor arriving while the plugin is off reads the last
+known price instead of a gap in the sentence, and the server takes over again
+as soon as it is back.
+
+Both branches go through `whmcs_products_func_base_price()` and
+`Get_TLD_Pricing()`, the same helpers the shortcode and the blocks use, so an
+inline price and a block price on one page cannot be assembled two different
+ways and end up disagreeing.
+
+A registration length WHMCS does not sell renders nothing here, where the block
+falls back to one year. The block words its own period line and can say what it
+actually quoted; a bare figure dropped into a sentence an author wrote cannot,
+and *"three years for $X"* would then describe an offer that does not exist.
+
+### Naming which promotion to price against
+
+`whmcs_products` on a product carrying several promotions quoted whichever one
+WHMCS listed first. The order is arbitrary — it is whatever `GetPromotions`
+returns — so on a hosting product the extension priced against a code
+restricted to a single client, at 65 %, while the order buttons on the same
+site forced a public code at 51 %. The figure the page showed and the figure a
+customer paid were two different numbers, and nothing reported a problem.
+
+`GetProducts()` had accepted a promotion prefix since the beginning and
+`_GetProductPromotions()` honoured it. All three callers passed `null`: the
+filter was written and unreachable. It is now exposed as `promoprefix` on the
+shortcode — `promocode` was already taken, and returns the code rather than the
+price — as **Promotion code** on the product block, and as
+`data-whmcs-promocode` on the inline price.
+
+### The promotion prefix is part of the cache key
+
+`whmcs-pi_pid-<pid>` ignored it, and the promotion is applied on the way into
+the cache. Two callers asking for two different codes therefore shared one
+entry: the first render of the day decided the price the whole site showed for
+the next twenty-four hours, silently. The key is now
+`whmcs-pi_pid-<pid>-<code>`, the plain form being kept when no code is named so
+nothing already stored is orphaned.
+
+### A promotional price is now something you ask for
+
+`promoPrice` on the block and `promo` on the inline price both defaulted to on,
+which meant a block dropped on a page with nothing configured published a
+promotional price nobody had chosen — the private code above being exactly that
+case. Both now default to off, matching `promoprice` on the shortcode, which
+had the right default all along.
+
+This changes existing content. A block or an inline price relying on the old
+default carried no attribute of its own, so it now renders the regular price.
+That is the safe direction to fail in, but it is a change: pages meant to quote
+a promotion need the toggle turned on and a code named.
+
+### Prefix matching no longer searched from the wrong end
+
+`_GetProductPromotions()` tested `strrpos($code, $prefix) === 0`. strrpos
+searches from the right, so a code carrying the prefix twice reported the second
+occurrence and failed the test. `str_starts_with()` says what was meant, and
+WordPress polyfills it below PHP 8.0.
+
+### Data attributes now survive KSES
+
+An author without the `unfiltered_html` capability — the Author role, and
+every role on multisite — has post content filtered on save, and KSES keeps
+no `data-*` attribute on a span. Left alone, the first save by such an author
+would quietly strip an inline price back to bare text: the price stops updating
+and the sentence still reads, so nothing looks wrong.
+
+`wp_kses_allowed_html` now allows exactly the attributes this plugin writes,
+in the post context only. They carry data, never markup or script.
+
+### WordPress 6.3 is now the minimum
+
+The header still claimed 5.8, which had not been true since the blocks moved to
+API version 3 — that is a 6.3 feature, and 6.3 is what the plugin now declares.
+The inline format needs `useAnchor()`, older still at 6.1, so nothing here
+moves the floor further than the blocks already had.
+
+`Tested up to` was raised from 5.8 to 7.1 at the same time. It had been stale
+enough that WordPress.org would have warned visitors the plugin was untested
+against any supported release.
+
 ## 1.3.0
 
 ### Product prices now render
